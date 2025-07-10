@@ -104,6 +104,20 @@ interface ISubnetManager {
         uint256 hetuReserve,
         uint256 alphaReserve
     );
+
+    /**
+     * @dev 获取子网基本信息
+     * @param netuid 子网ID
+     * @return 子网信息结构体
+     */
+    function getSubnetInfo(uint16 netuid) external view returns (SubnetTypes.SubnetInfo memory);
+    
+    /**
+     * @dev 获取子网超参数
+     * @param netuid 子网ID
+     * @return 子网超参数结构体
+     */
+    function getSubnetParams(uint16 netuid) external view returns (SubnetTypes.SubnetHyperparams memory);
     
     /**
      * @dev 获取网络锁定成本

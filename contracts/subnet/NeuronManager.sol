@@ -153,14 +153,8 @@ contract NeuronManager is ReentrancyGuard, Ownable {
         // 10. 添加到神经元列表
         neuronList[netuid].push(msg.sender);
         
-        // 11. 更新子网统计 - 使用计算得到的数据
-        subnetManager.updateSubnetStats(
-            netuid,
-            uint16(neuronList[netuid].length),
-            globalStaking.subnetTotalStake(netuid)
-        );
         
-        // 12. 发出事件供 native code 监听
+        // 11. 发出事件供 native code 监听
         emit NeuronRegistered(
             netuid, 
             msg.sender, 
@@ -192,13 +186,6 @@ contract NeuronManager is ReentrancyGuard, Ownable {
         // 从列表中移除
         _removeFromNeuronList(netuid, msg.sender);
         
-        // 更新子网统计 - 使用计算得到的数据
-        subnetManager.updateSubnetStats(
-            netuid,
-            uint16(neuronList[netuid].length),
-            globalStaking.subnetTotalStake(netuid)
-        );
-        
         // 发出事件供 native code 监听 - native code 会在当前 epoch 停止为该神经元计算奖励
         emit NeuronDeregistered(netuid, msg.sender, block.number);
     }
@@ -228,13 +215,6 @@ contract NeuronManager is ReentrancyGuard, Ownable {
         neuron.stake = newStake;
         neuron.isValidator = isValidator;
         neuron.lastUpdate = block.timestamp;
-        
-        // 更新子网统计 - 使用计算得到的数据
-        subnetManager.updateSubnetStats(
-            netuid,
-            uint16(neuronList[netuid].length),
-            globalStaking.subnetTotalStake(netuid)
-        );
         
         // 发出事件供 native code 监听 - 质押变化会影响奖励计算
         emit StakeAllocationChanged(
