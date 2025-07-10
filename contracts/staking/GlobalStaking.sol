@@ -152,22 +152,6 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
         emit SubnetAllocationChanged(msg.sender, netuid, oldAmount, amount);
     }
     
-    // 添加缺失的接口函数
-    /**
-     * @dev 从子网取消分配质押
-     */
-    function deallocateFromSubnet(uint16 netuid, uint256 amount) external nonReentrant {
-        SubnetAllocation storage allocation = subnetAllocations[msg.sender][netuid];
-        require(allocation.allocated >= amount, "INSUFFICIENT_ALLOCATION");
-        require(allocation.allocated - allocation.locked >= amount, "AMOUNT_LOCKED");
-        
-        uint256 currentAllocation = allocation.allocated;
-        uint256 newAllocation = currentAllocation - amount;
-        
-        // 调用现有的allocateToSubnet函数来处理逻辑
-        allocateToSubnet(netuid, newAllocation);
-    }
-    
     /**
      * @dev 领取奖励 (暂时为空实现)
      */

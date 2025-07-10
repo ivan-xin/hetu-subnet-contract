@@ -4,13 +4,13 @@ pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
+import "../interfaces/IAlphaToken.sol";
 /**
  * @title AlphaToken
  * @dev 子网的Alpha代币合约
  * 每个子网都有自己独特的Alpha代币
  */
-contract AlphaToken is ERC20, Ownable {
+contract AlphaToken is ERC20, Ownable, IAlphaToken {
     
     // 子网ID
     uint16 public immutable netuid;
@@ -20,11 +20,6 @@ contract AlphaToken is ERC20, Ownable {
     
     // 代币创建时间
     uint256 public immutable createdAt;
-    
-    // 事件
-    event MinterChanged(address indexed oldMinter, address indexed newMinter);
-    event TokensMinted(address indexed to, uint256 amount);
-    event TokensBurned(address indexed from, uint256 amount);
     
     modifier onlyMinter() {
         require(msg.sender == minter, "AlphaToken: ONLY_MINTER");

@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 interface IGlobalStaking {
     struct StakeInfo {
         uint256 totalStaked;           // 总质押量
@@ -22,7 +24,6 @@ interface IGlobalStaking {
     function addGlobalStake(uint256 amount) external;
     function removeGlobalStake(uint256 amount) external;
     function allocateToSubnet(uint16 netuid, uint256 amount) external;
-    function deallocateFromSubnet(uint16 netuid, uint256 amount) external;
     function claimRewards() external;
     
     // ============ Subnet Manager Functions ============
@@ -45,7 +46,7 @@ interface IGlobalStaking {
     function getLockedStake(address user, uint16 netuid) external view returns (uint256);
 
     // ============ State Variables ============
-    function hetuToken() external view returns (address);
+    function hetuToken() external view returns (IERC20); 
     function totalUserStake(address user) external view returns (uint256);
     function subnetTotalStake(uint16 netuid) external view returns (uint256);
     function subnetUserStake(uint16 netuid, address user) external view returns (uint256);
