@@ -28,6 +28,10 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
     // 锁定的质押（用于神经元注册）
     mapping(address => mapping(uint16 => uint256)) public lockedStake;
     
+    // 添加缺失的状态变量
+    mapping(address => mapping(uint16 => SubnetAllocation)) private subnetAllocations;
+    mapping(address => uint16[]) private userAllocatedSubnets;
+    uint256 private totalStaked;
 
     // 最小质押要求
     uint256 public constant MIN_STAKE_TO_PARTICIPATE = 100 ether; // 100 HETU
@@ -79,6 +83,7 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
         stakeInfo.lastUpdateBlock = block.number;
         
         totalUserStake[msg.sender] += amount;
+        totalStaked += amount;
         
         emit GlobalStakeAdded(msg.sender, amount);
     }
@@ -97,6 +102,7 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
         stakeInfo.lastUpdateBlock = block.number;
         
         totalUserStake[msg.sender] -= amount;
+        totalStaked -= amount;
         
         hetuToken.transfer(msg.sender, amount);
         
@@ -110,7 +116,7 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
         require(amount >= MIN_SUBNET_ALLOCATION || amount == 0, "BELOW_MIN_ALLOCATION");
         
         StakeInfo storage stakeInfo = userStakes[msg.sender];
-        SubnetAllocation storage allocation = stakeInfo.subnetAllocations[msg.sender][netuid];
+        SubnetAllocation storage allocation = subnetAllocations[msg.sender][netuid];
         
         uint256 oldAmount = allocation.allocated;
         
@@ -137,13 +143,41 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
         subnetUserStake[netuid][msg.sender] = amount;
         
         // 更新分配列表
-        // if (oldAmount == 0 && amount > 0) {
-        //     stakeInfo.allocatedSubnets.push(netuid);
-        // } else if (oldAmount > 0 && amount == 0) {
-        //     _removeFromAllocatedSubnets(msg.sender, netuid);
-        // }
+        if (oldAmount == 0 && amount > 0) {
+            userAllocatedSubnets[msg.sender].push(netuid);
+        } else if (oldAmount > 0 && amount == 0) {
+            _removeFromAllocatedSubnets(msg.sender, netuid);
+        }
         
         emit SubnetAllocationChanged(msg.sender, netuid, oldAmount, amount);
+    }
+    
+    // 添加缺失的接口函数
+    /**
+     * @dev 从子网取消分配质押
+     */
+    function deallocateFromSubnet(uint16 netuid, uint256 amount) external nonReentrant {
+        SubnetAllocation storage allocation = subnetAllocations[msg.sender][netuid];
+        require(allocation.allocated >= amount, "INSUFFICIENT_ALLOCATION");
+        require(allocation.allocated - allocation.locked >= amount, "AMOUNT_LOCKED");
+        
+        uint256 currentAllocation = allocation.allocated;
+        uint256 newAllocation = currentAllocation - amount;
+        
+        // 调用现有的allocateToSubnet函数来处理逻辑
+        allocateToSubnet(netuid, newAllocation);
+    }
+    
+    /**
+     * @dev 领取奖励 (暂时为空实现)
+     */
+    function claimRewards() external nonReentrant {
+        StakeInfo storage stakeInfo = userStakes[msg.sender];
+        uint256 rewards = stakeInfo.pendingRewards;
+        require(rewards > 0, "NO_REWARDS");
+        
+        stakeInfo.pendingRewards = 0;
+        // TODO: 实现奖励分发逻辑
     }
     
     /**
@@ -156,6 +190,7 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
         require(subnetUserStake[netuid][user] >= amount, "INSUFFICIENT_SUBNET_STAKE");
         
         lockedStake[user][netuid] += amount;
+        subnetAllocations[user][netuid].locked += amount;
         
         emit StakeLocked(user, netuid, amount);
     }
@@ -170,6 +205,7 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
         require(lockedStake[user][netuid] >= amount, "INSUFFICIENT_LOCKED_STAKE");
         
         lockedStake[user][netuid] -= amount;
+        subnetAllocations[user][netuid].locked -= amount;
         
         emit StakeUnlocked(user, netuid, amount);
     }
@@ -201,11 +237,33 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
         return total > locked ? total - locked : 0;
     }
     
+    // 添加缺失的接口函数
+    /**
+     * @dev 获取用户质押信息 (接口版本)
+     */
+    function getStakeInfo(address user) external view returns (StakeInfo memory) {
+        return userStakes[user];
+    }
+    
+    /**
+     * @dev 获取子网分配信息 (接口版本)
+     */
+    function getSubnetAllocation(address user, uint16 netuid) external view returns (SubnetAllocation memory) {
+        return subnetAllocations[user][netuid];
+    }
+    
+    /**
+     * @dev 获取总质押量
+     */
+    function getTotalStaked() external view returns (uint256) {
+        return totalStaked;
+    }
+    
     /**
      * @dev 获取用户的质押信息
      */
     function getUserStakeInfo(address user) external view returns (
-        uint256 totalStaked,
+        uint256 totalStaked_,
         uint256 availableForAllocation,
         uint16[] memory allocatedSubnets
     ) {
@@ -213,15 +271,8 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
         return (
             stakeInfo.totalStaked,
             stakeInfo.availableForAllocation,
-            stakeInfo.allocatedSubnets
+            userAllocatedSubnets[user]
         );
-    }
-    
-    /**
-     * @dev 获取用户在特定子网的分配
-     */
-    function getSubnetAllocation(address user, uint16 netuid) external view returns (uint256) {
-        return userStakes[user].subnetAllocations[netuid];
     }
     
     /**
@@ -244,7 +295,7 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
      * @dev 从已分配子网列表中移除
      */
     function _removeFromAllocatedSubnets(address user, uint16 netuid) internal {
-        uint16[] storage subnets = userStakes[user].allocatedSubnets;
+        uint16[] storage subnets = userAllocatedSubnets[user];
         for (uint i = 0; i < subnets.length; i++) {
             if (subnets[i] == netuid) {
                 subnets[i] = subnets[subnets.length - 1];

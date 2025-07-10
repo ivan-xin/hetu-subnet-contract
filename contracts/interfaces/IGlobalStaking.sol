@@ -6,9 +6,8 @@ interface IGlobalStaking {
     struct StakeInfo {
         uint256 totalStaked;           // 总质押量
         uint256 totalAllocated;        // 总分配量
-        uint256 availableForAllocation;        // 可用质押量
-        uint256 lockedStake;           // 锁定质押量
-        uint256 lastUpdateBlock;         // 最后质押时间
+        uint256 availableForAllocation; // 可用质押量
+        uint256 lastUpdateBlock;       // 最后更新区块 (修改：从lastUpdateTime改为lastUpdateBlock)
         uint256 pendingRewards;        // 待领取奖励
     }
     
