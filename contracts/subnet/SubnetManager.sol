@@ -3,9 +3,9 @@
 pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./AlphaToken.sol";
+import "../tokens/AlphaToken.sol";
 import "../amm/SubnetAMM.sol";
 import "../factory/SubnetAMMFactory.sol";
 
