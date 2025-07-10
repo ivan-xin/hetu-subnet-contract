@@ -9,17 +9,20 @@ import "../tokens/AlphaToken.sol";
 import "../amm/SubnetAMM.sol";
 import "../factory/SubnetAMMFactory.sol";
 import "../interfaces/ISubnetManager.sol";
+import "./DefaultHyperparams.sol";
 
 /**
  * @title SubnetManagerSimplified
- * @dev 简化版子网管理器，移除hotkey/coldkey复杂性
+ * @dev 子网管理器
  */
 contract SubnetManagerSimplified is ReentrancyGuard, Ownable, ISubnetManager {
-    
+    using DefaultHyperparams for SubnetTypes.SubnetHyperparams;
+
     IERC20 public immutable hetuToken;
     SubnetAMMFactory public immutable ammFactory;
     
     mapping(uint16 => SubnetInfo) public subnets;
+    mapping(uint16 => SubnetTypes.SubnetHyperparams) public subnetHyperparams;
     mapping(uint16 => bool) public subnetExists;
     mapping(address => uint16[]) public ownerSubnets; // 一个用户可以拥有多个子网
     
@@ -41,7 +44,8 @@ contract SubnetManagerSimplified is ReentrancyGuard, Ownable, ISubnetManager {
         uint256 lockedAmount,
         uint256 poolAmount,
         uint256 burnedAmount,
-        string name
+        string name,
+        SubnetTypes.SubnetHyperparams hyperparams
     );
     
     constructor(address _hetuToken, address _ammFactory) {
@@ -62,6 +66,59 @@ contract SubnetManagerSimplified is ReentrancyGuard, Ownable, ISubnetManager {
         string calldata tokenName,
         string calldata tokenSymbol
     ) external nonReentrant returns (uint16 netuid) {
+        SubnetTypes.SubnetHyperparams memory defaultParams = DefaultHyperparams.getDefaultHyperparams();
+        return _registerNetworkWithHyperparams(
+            name,
+            description,
+            tokenName,
+            tokenSymbol,
+            defaultParams,
+            NetworkType.DEFAULT
+        );
+    }
+    
+    /**
+     * @dev 使用部分自定义超参数注册子网（其余使用默认值）
+     */
+    function registerNetworkWithPartialCustom(
+        string calldata name,
+        string calldata description,
+        string calldata tokenName,
+        string calldata tokenSymbol,
+        SubnetTypes.SubnetHyperparams calldata customHyperparams,
+        bool[21] calldata useCustomFlags
+    ) external nonReentrant returns (uint16 netuid) {
+        // 合并自定义参数与默认参数
+        SubnetTypes.SubnetHyperparams memory mergedParams = DefaultHyperparams.mergeWithDefaults(
+            customHyperparams,
+            useCustomFlags
+        );
+        
+        // 验证合并后的超参数
+        require(DefaultHyperparams.validateHyperparams(mergedParams), "INVALID_MERGED_HYPERPARAMS");
+        
+        return _registerNetworkWithHyperparams(
+            name,
+            description,
+            tokenName,
+            tokenSymbol,
+            mergedParams,
+            NetworkType.CUSTOM
+        );
+    }
+    
+
+    /**
+     * @dev 内部注册网络函数
+     */
+    function _registerNetworkWithHyperparams(
+        string calldata name,
+        string calldata description,
+        string calldata tokenName,
+        string calldata tokenSymbol,
+        SubnetTypes.SubnetHyperparams memory hyperparams,
+        NetworkType networkType
+    ) internal returns (uint16 netuid) {
         address owner = msg.sender;
         
         // 基本验证
@@ -96,7 +153,7 @@ contract SubnetManagerSimplified is ReentrancyGuard, Ownable, ISubnetManager {
         }
         
         // 记录子网信息
-        subnets[netuid] = SubnetInfo({
+        subnets[netuid] = SubnetTypes.SubnetInfo({
             netuid: netuid,
             owner: owner,
             alphaToken: alphaTokenAddress,
@@ -110,6 +167,9 @@ contract SubnetManagerSimplified is ReentrancyGuard, Ownable, ISubnetManager {
             description: description
         });
         
+        // 设置子网超参数
+        subnetHyperparams[netuid] = hyperparams;
+        
         subnetExists[netuid] = true;
         ownerSubnets[owner].push(netuid);
         totalNetworks++;
@@ -120,12 +180,13 @@ contract SubnetManagerSimplified is ReentrancyGuard, Ownable, ISubnetManager {
         
         emit NetworkRegistered(
             netuid, owner, alphaTokenAddress, ammPoolAddress,
-            lockAmount, poolInitialTao, burnedAmount, name
+            lockAmount, poolInitialTao, burnedAmount, name, networkType,hyperparams
         );
         
         return netuid;
     }
     
+
     /**
      * @dev 转移子网所有权
      */
@@ -163,6 +224,15 @@ contract SubnetManagerSimplified is ReentrancyGuard, Ownable, ISubnetManager {
         emit SubnetInfoUpdated(netuid, newName, newDescription);
     }
     
+
+    /**
+     * @dev 获取子网超参数
+     */
+    function getSubnetHyperparams(uint16 netuid) external view returns (SubnetTypes.SubnetHyperparams memory) {
+        require(subnetExists[netuid], "SUBNET_NOT_EXISTS");
+        return subnetHyperparams[netuid];
+    }
+
     /**
      * @dev 获取用户拥有的所有子网
      */
