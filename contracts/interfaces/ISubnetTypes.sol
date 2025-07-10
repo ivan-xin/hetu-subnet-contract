@@ -7,12 +7,14 @@ library SubnetTypes {
         uint16 rho;                    // 共识参数
         uint16 kappa;                  // 激励参数  
         uint16 immunityPeriod;         // 免疫期
-        uint16 minAllowedWeights;      // 最小权重数
-        uint16 maxWeightsLimit;        // 最大权重限制
         uint16 tempo;                  // 网络节拍
         uint16 maxValidators;          // 最大验证者数
         uint16 activityCutoff;         // 活跃度阈值
-        
+        uint16 maxAllowedUids;         // 最大允许的神经元数量
+        uint16 maxAllowedValidators;   // 最大允许的验证者数量
+        uint16 minAllowedWeights;      // 验证者设置的权重向量中至少要有多少个非零权重值
+        uint16 maxWeightsLimit;        // 最大权重限制
+
         // 经济参数
         uint256 baseBurnCost;          // 基础燃烧成本
         uint64 currentDifficulty;      // 当前挖矿难度
@@ -25,7 +27,8 @@ library SubnetTypes {
         bool commitRevealEnabled;      // 提交-揭示机制
         uint64 commitRevealPeriod;     // 提交-揭示周期
         uint64 servingRateLimit;       // 服务频率限制
-        uint256 validatorThreshold;    // 验证者门槛
+        uint16 validatorThreshold;     // 验证者门槛
+        uint16 neuronThreshold;        // 神经元门槛
     }
     
     struct SubnetInfo {
