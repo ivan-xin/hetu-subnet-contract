@@ -25,21 +25,21 @@ library SubnetTypes {
         bool commitRevealEnabled;      // 提交-揭示机制
         uint64 commitRevealPeriod;     // 提交-揭示周期
         uint64 servingRateLimit;       // 服务频率限制
+        uint256 validatorThreshold;    // 验证者门槛
     }
     
     struct SubnetInfo {
-        uint16 netuid;                 // 子网ID
-        address owner;                 // 所有者
-        address ownerHotkey;           // 所有者热键
-        string identity;               // 身份标识
-        address subnetContract;        // 子网合约地址
-        address alphaToken;            // Alpha代币地址
-        address ammPool;               // AMM池地址
-        uint16 currentNeurons;         // 当前神经元数量
-        uint256 totalStake;            // 总质押量
-        uint256 totalAlphaSupply;      // Alpha代币总供应量
-        uint256 createdAt;             // 创建时间
-        bool isActive;                 // 是否活跃
+        uint16 netuid;
+        address owner;          // 子网所有者（单一地址）
+        address alphaToken;     // Alpha代币地址
+        address ammPool;        // AMM池子地址
+        uint256 lockedAmount;   // 锁定的HETU数量
+        uint256 poolInitialTao; // 注入池子的HETU数量
+        uint256 burnedAmount;   // 燃烧的HETU数量
+        uint256 createdAt;      // 创建时间
+        bool isActive;          // 是否激活
+        string name;            // 子网名称
+        string description;     // 子网描述
     }
     
     // 简化的Axon信息 - 基于实际网络需求
@@ -85,7 +85,7 @@ library SubnetTypes {
     }
     
     // 完整神经元信息 - 仅用于查询，不存储
-    struct NeuronInfo {
+    struct DetailedNeuronInfo {
         NeuronCore core;
         NeuronMetrics metrics;
         AxonInfo axon;
@@ -94,6 +94,21 @@ library SubnetTypes {
         address[] stakers;            // 质押者地址数组
         uint16[] weightUids;          // 权重目标UID
         uint16[] weightValues;        // 权重值
+    }
+
+    struct NeuronInfo {
+        address account;              // 账户地址
+        uint16 uid;                   // UID
+        uint16 netuid;                // 子网ID
+        bool isActive;                // 是否活跃
+        bool isValidator;             // 是否为验证者
+        uint256 stake;                // 质押量
+        uint64 registrationBlock;     // 注册区块
+        uint256 lastUpdate;           // 最后更新时间
+        string axonEndpoint;          // Axon端点
+        uint32 axonPort;              // Axon端口
+        string prometheusEndpoint;    // Prometheus端点
+        uint32 prometheusPort;        // Prometheus端口
     }
     
     struct WeightCommit {

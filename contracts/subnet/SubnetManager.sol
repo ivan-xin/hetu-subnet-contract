@@ -8,30 +8,16 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../tokens/AlphaToken.sol";
 import "../amm/SubnetAMM.sol";
 import "../factory/SubnetAMMFactory.sol";
+import "../interfaces/ISubnetManager.sol";
 
 /**
  * @title SubnetManagerSimplified
  * @dev 简化版子网管理器，移除hotkey/coldkey复杂性
  */
-contract SubnetManagerSimplified is ReentrancyGuard, Ownable {
+contract SubnetManagerSimplified is ReentrancyGuard, Ownable, ISubnetManager {
     
     IERC20 public immutable hetuToken;
     SubnetAMMFactory public immutable ammFactory;
-    
-    // 简化的子网信息
-    struct SubnetInfo {
-        uint16 netuid;
-        address owner;          // 子网所有者（单一地址）
-        address alphaToken;     // Alpha代币地址
-        address ammPool;        // AMM池子地址
-        uint256 lockedAmount;   // 锁定的HETU数量
-        uint256 poolInitialTao; // 注入池子的HETU数量
-        uint256 burnedAmount;   // 燃烧的HETU数量
-        uint256 createdAt;      // 创建时间
-        bool isActive;          // 是否激活
-        string name;            // 子网名称
-        string description;     // 子网描述
-    }
     
     mapping(uint16 => SubnetInfo) public subnets;
     mapping(uint16 => bool) public subnetExists;
