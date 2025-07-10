@@ -21,7 +21,6 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     mapping(uint16 => mapping(address => SubnetTypes.NeuronInfo)) public neurons;
     mapping(uint16 => address[]) public neuronList;
     
-    
     modifier onlyRewardDistributor() {
         require(msg.sender == rewardDistributor, "ONLY_REWARD_DISTRIBUTOR");
         _;
@@ -48,8 +47,6 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
         rewardDistributor = _rewardDistributor;
     }
     
-    // ============ 内部辅助函数 - 移到前面 ============
-    
     /**
      * @dev 获取子网验证者数量
      */
@@ -65,7 +62,7 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     }
     
     /**
-     * @dev 注册神经元 - 用户质押HETU后可选择注册成为矿工或验证者
+     * @dev 注册神经元
      */
     function registerNeuron(
         uint16 netuid,
@@ -161,7 +158,7 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     function deregisterNeuron(uint16 netuid) external nonReentrant {
         require(neurons[netuid][msg.sender].isActive, "NOT_REGISTERED");
         
-        SubnetTypes.NeuronInfo storage neuron = neurons[netuid][msg.sender];
+        // SubnetTypes.NeuronInfo storage neuron = neurons[netuid][msg.sender];
         SubnetTypes.SubnetHyperparams memory params = subnetManager.getSubnetParams(netuid);
         
         // 解锁质押
@@ -178,7 +175,7 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     }
     
     /**
-     * @dev 更新质押分配（由 GlobalStaking 调用或质押变化时触发）
+     * @dev 更新质押分配（新增：检查门槛限制）
      */
     function updateStakeAllocation(
         uint16 netuid,
@@ -190,6 +187,16 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
             "UNAUTHORIZED_UPDATE"
         );
         require(neurons[netuid][account].isActive, "NEURON_NOT_ACTIVE");
+        
+        // 新增：检查门槛限制
+        SubnetTypes.SubnetHyperparams memory params = subnetManager.getSubnetParams(netuid);
+        SubnetTypes.NeuronInfo storage neuron = neurons[netuid][account];
+        
+        if (neuron.isValidator) {
+            require(newStake >= params.validatorThreshold, "VALIDATOR_STAKE_BELOW_THRESHOLD");
+        } else {
+            require(newStake >= params.neuronThreshold, "NEURON_STAKE_BELOW_THRESHOLD");
+        }
         
         _updateSingleStakeAllocation(netuid, account, newStake);
     }
@@ -335,9 +342,6 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     
     /**
      * @dev 检查用户是否可以注册为神经元
-     * @param user 用户地址
-     * @param netuid 子网ID
-     * @param isValidatorRole 是否选择验证者角色
      */
     function canRegisterNeuron(address user, uint16 netuid, bool isValidatorRole) external view returns (bool) {
         if (neurons[netuid][user].isActive) return false;
@@ -391,33 +395,20 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
         uint256 newStake
     ) internal {
         SubnetTypes.NeuronInfo storage neuron = neurons[netuid][account];
-        SubnetTypes.SubnetHyperparams memory params = subnetManager.getSubnetParams(netuid);
-        
         uint256 oldStake = neuron.stake;
-        bool isValidator = neuron.isValidator;
         
-        // 1. 根据角色检查质押门槛
-        if (isValidator) {
-            // 验证者不允许质押降到验证者门槛之下
-            require(newStake >= params.validatorThreshold, "VALIDATOR_STAKE_TOO_LOW");
-        } else {
-            // 矿工不允许质押降到神经元门槛之下
-            require(newStake >= params.neuronThreshold, "NEURON_STAKE_TOO_LOW");
-        }
-        
-        // 2. 更新神经元信息（角色保持不变）
+        // 更新神经元信息
         neuron.stake = newStake;
         neuron.lastUpdate = block.timestamp;
-        // neuron.isValidator 保持不变
         
-        // 3. 发出事件
+        // 发出事件
         emit StakeAllocationChanged(
             netuid, 
             account, 
             oldStake, 
             newStake, 
-            isValidator, 
-            isValidator, // 角色不变
+            neuron.isValidator, 
+            neuron.isValidator, // 角色不变
             block.number
         );
     }

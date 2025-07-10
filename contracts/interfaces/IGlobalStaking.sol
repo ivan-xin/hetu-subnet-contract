@@ -9,7 +9,7 @@ interface IGlobalStaking {
         uint256 totalStaked;           // 总质押量
         uint256 totalAllocated;        // 总分配量
         uint256 availableForAllocation; // 可用质押量
-        uint256 lastUpdateBlock;       // 最后更新区块 (修改：从lastUpdateTime改为lastUpdateBlock)
+        uint256 lastUpdateBlock;       // 最后更新区块
         uint256 pendingRewards;        // 待领取奖励
     }
     
@@ -24,9 +24,10 @@ interface IGlobalStaking {
     function addGlobalStake(uint256 amount) external;
     function removeGlobalStake(uint256 amount) external;
     function allocateToSubnet(uint16 netuid, uint256 amount) external;
+    function allocateToSubnetWithThreshold(address user, uint16 netuid, uint256 amount, uint256 minThreshold) external;
     function claimRewards() external;
     
-    // ============ Subnet Manager Functions ============
+    // ============ Authorized Caller Functions ============
     function lockSubnetStake(address user, uint16 netuid, uint256 amount) external;
     function unlockSubnetStake(address user, uint16 netuid, uint256 amount) external;
     function canBecomeNeuron(address user, uint16 netuid, uint256 requiredAmount) external view returns (bool);
@@ -51,8 +52,8 @@ interface IGlobalStaking {
     function subnetTotalStake(uint16 netuid) external view returns (uint256);
     function subnetUserStake(uint16 netuid, address user) external view returns (uint256);
     function lockedStake(address user, uint16 netuid) external view returns (uint256);
-    function authorizedSubnetManagers(address manager) external view returns (bool);
+    function authorizedCallers(address caller) external view returns (bool);
     
     // ============ Admin Functions ============
-    function setSubnetManagerAuthorization(address manager, bool authorized) external;
+    function setAuthorizedCaller(address caller, bool authorized) external;
 }

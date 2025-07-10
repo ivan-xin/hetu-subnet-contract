@@ -16,7 +16,7 @@ library SubnetTypes {
         uint16 maxWeightsLimit;        // 最大权重限制
 
         // 经济参数
-        uint256 baseBurnCost;          // 基础燃烧成本
+        uint256 baseBurnCost;          // 注册成为神经元的基本燃烧成本
         uint64 currentDifficulty;      // 当前挖矿难度
         uint16 targetRegsPerInterval;  // 目标注册频率
         uint16 maxRegsPerBlock;        // 每区块最大注册数
