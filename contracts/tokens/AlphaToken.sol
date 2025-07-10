@@ -37,9 +37,6 @@ contract AlphaToken is ERC20, Ownable, IAlphaToken {
         minter = _minter;
         netuid = _netuid;
         createdAt = block.timestamp;
-        
-        // 将所有权转移给minter
-        // _transferOwnership(_minter);
     }
     
     /**
