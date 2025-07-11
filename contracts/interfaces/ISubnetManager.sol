@@ -143,19 +143,19 @@ interface ISubnetManager {
     //* @param netuid 子网ID
     //* @return 子网信息结构体
     //**
-    function subnets(uint16 netuid) external view returns (
-        uint16 netuid_,
-        address owner,
-        address alphaToken,
-        address ammPool,
-        uint256 lockedAmount,
-        uint256 poolInitialTao,
-        uint256 burnedAmount,
-        uint256 createdAt,
-        bool isActive,
-        string memory name,
-        string memory description
-    );
+    // function subnets(uint16 netuid) external view returns (
+    //     uint16 netuid_,
+    //     address owner,
+    //     address alphaToken,
+    //     address ammPool,
+    //     uint256 lockedAmount,
+    //     uint256 poolInitialTao,
+    //     uint256 burnedAmount,
+    //     uint256 createdAt,
+    //     bool isActive,
+    //     string memory name,
+    //     string memory description
+    // );
     
     // ============ Network Parameters ============
     
@@ -175,12 +175,12 @@ interface ISubnetManager {
     /**
      * @dev 获取HETU代币地址
      */
-    function hetuToken() external view returns (address);
+    // function hetuToken() external view returns (address);
     
     /**
      * @dev 获取AMM工厂地址
      */
-    function ammFactory() external view returns (address);
+    // function ammFactory() external view returns (address);
     
     // ============ Admin Functions (if needed) ============
     
@@ -190,21 +190,21 @@ interface ISubnetManager {
      * @param newRateLimit 新的速率限制
      * @param newReductionInterval 新的减少间隔
      */
-    function updateNetworkParams(
-        uint256 newMinLock,
-        uint256 newRateLimit,
-        uint256 newReductionInterval
-    ) external;
+    // function updateNetworkParams(
+    //     uint256 newMinLock,
+    //     uint256 newRateLimit,
+    //     uint256 newReductionInterval
+    // ) external;
     
     /**
      * @dev 紧急暂停子网（仅所有者）
      * @param netuid 子网ID
      */
-    function pauseSubnet(uint16 netuid) external;
+    // function pauseSubnet(uint16 netuid) external;
     
     /**
      * @dev 恢复子网（仅所有者）
      * @param netuid 子网ID
      */
-    function resumeSubnet(uint16 netuid) external;
+    // function resumeSubnet(uint16 netuid) external;
 }

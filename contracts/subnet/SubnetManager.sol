@@ -9,19 +9,20 @@ import "../tokens/AlphaToken.sol";
 import "../amm/SubnetAMM.sol";
 import "../factory/SubnetAMMFactory.sol";
 import "../interfaces/ISubnetManager.sol";
+import "../interfaces/ISubnetTypes.sol";
 import "./DefaultHyperparams.sol";
 
 /**
- * @title SubnetManagerSimplified
+ * @title SubnetManager
  * @dev 子网管理器
  */
-contract SubnetManagerSimplified is ReentrancyGuard, Ownable, ISubnetManager {
+contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     using DefaultHyperparams for SubnetTypes.SubnetHyperparams;
 
-    IERC20 public immutable hetuToken;
+    IERC20 public immutable  hetuToken;
     SubnetAMMFactory public immutable ammFactory;
     
-    mapping(uint16 => SubnetInfo) public subnets;
+    mapping(uint16 => SubnetTypes.SubnetInfo) public subnets;
     mapping(uint16 => SubnetTypes.SubnetHyperparams) public subnetHyperparams;
     mapping(uint16 => bool) public subnetExists;
     mapping(address => uint16[]) public ownerSubnets; // 一个用户可以拥有多个子网
@@ -48,7 +49,7 @@ contract SubnetManagerSimplified is ReentrancyGuard, Ownable, ISubnetManager {
         SubnetTypes.SubnetHyperparams hyperparams
     );
     
-    constructor(address _hetuToken, address _ammFactory) {
+    constructor(address _hetuToken, address _ammFactory)Ownable(msg.sender) {
         require(_hetuToken != address(0), "ZERO_HETU_ADDRESS");
         require(_ammFactory != address(0), "ZERO_FACTORY_ADDRESS");
         
@@ -72,8 +73,7 @@ contract SubnetManagerSimplified is ReentrancyGuard, Ownable, ISubnetManager {
             description,
             tokenName,
             tokenSymbol,
-            defaultParams,
-            NetworkType.DEFAULT
+            defaultParams
         );
     }
     
@@ -102,8 +102,7 @@ contract SubnetManagerSimplified is ReentrancyGuard, Ownable, ISubnetManager {
             description,
             tokenName,
             tokenSymbol,
-            mergedParams,
-            NetworkType.CUSTOM
+            mergedParams
         );
     }
     
@@ -116,8 +115,7 @@ contract SubnetManagerSimplified is ReentrancyGuard, Ownable, ISubnetManager {
         string calldata description,
         string calldata tokenName,
         string calldata tokenSymbol,
-        SubnetTypes.SubnetHyperparams memory hyperparams,
-        NetworkType networkType
+        SubnetTypes.SubnetHyperparams memory hyperparams
     ) internal returns (uint16 netuid) {
         address owner = msg.sender;
         
@@ -180,7 +178,7 @@ contract SubnetManagerSimplified is ReentrancyGuard, Ownable, ISubnetManager {
         
         emit NetworkRegistered(
             netuid, owner, alphaTokenAddress, ammPoolAddress,
-            lockAmount, poolInitialTao, burnedAmount, name, networkType,hyperparams
+            lockAmount, poolInitialTao, burnedAmount, name,hyperparams
         );
         
         return netuid;
@@ -241,10 +239,26 @@ contract SubnetManagerSimplified is ReentrancyGuard, Ownable, ISubnetManager {
     }
     
     /**
+     * @dev 获取子网信息结构体
+     */
+    function getSubnetInfo(uint16 netuid) external view override returns (SubnetTypes.SubnetInfo memory) {
+        require(subnetExists[netuid], "SUBNET_NOT_EXISTS");
+        return subnets[netuid];
+    }
+    
+    /**
+     * @dev 获取子网超参数
+     */
+    function getSubnetParams(uint16 netuid) external view override returns (SubnetTypes.SubnetHyperparams memory) {
+        require(subnetExists[netuid], "SUBNET_NOT_EXISTS");
+        return subnetHyperparams[netuid];
+    }
+
+    /**
      * @dev 获取子网详细信息
      */
     function getSubnetDetails(uint16 netuid) external view returns (
-        SubnetInfo memory subnetInfo,
+        SubnetTypes.SubnetInfo memory subnetInfo,
         uint256 currentPrice,
         uint256 totalVolume,
         uint256 hetuReserve,
@@ -344,8 +358,4 @@ contract SubnetManagerSimplified is ReentrancyGuard, Ownable, ISubnetManager {
         }
         return candidateNetuid;
     }
-    
-    // 事件定义
-    event SubnetOwnershipTransferred(uint16 indexed netuid, address indexed oldOwner, address indexed newOwner);
-    event SubnetInfoUpdated(uint16 indexed netuid, string name, string description);
 }
