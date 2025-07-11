@@ -512,32 +512,6 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev 批量兑换接口（兼容Uniswap接口）
-     */
-    function swapExactTokensForTokens(
-        uint256 amountIn,
-        uint256 amountOutMin,
-        address[] calldata path,
-        address to,
-        uint256 deadline
-    ) external returns (uint256[] memory amounts) {
-        require(deadline >= block.timestamp, "AMM: EXPIRED");
-        require(path.length == 2, "AMM: INVALID_PATH");
-        require(path[0] != path[1], "AMM: IDENTICAL_ADDRESSES");
-        
-        amounts = new uint256[](2);
-        amounts[0] = amountIn;
-        
-        if (path[0] == address(hetuToken) && path[1] == address(alphaToken)) {
-            amounts[1] = swapHETUForAlpha(amountIn, amountOutMin, to);
-        } else if (path[0] == address(alphaToken) && path[1] == address(hetuToken)) {
-            amounts[1] = swapAlphaForHETU(amountIn, amountOutMin, to);
-        } else {
-            revert("AMM: INVALID_PATH");
-        }
-    }
-    
-    /**
      * @dev 获取恒定乘积K值
      */
     function getK() external view returns (uint256) {
