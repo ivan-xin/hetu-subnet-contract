@@ -317,11 +317,11 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     }
     
     function _removeFromOwnerSubnets(address owner, uint16 netuid) internal {
-        uint16[] storage subnets = ownerSubnets[owner];
-        for (uint256 i = 0; i < subnets.length; i++) {
-            if (subnets[i] == netuid) {
-                subnets[i] = subnets[subnets.length - 1];
-                subnets.pop();
+        uint16[] storage userSubnets = ownerSubnets[owner];
+        for (uint256 i = 0; i < userSubnets.length; i++) {
+            if (userSubnets[i] == netuid) {
+                userSubnets[i] = userSubnets[userSubnets.length - 1];
+                userSubnets.pop();
                 break;
             }
         }

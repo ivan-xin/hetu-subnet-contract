@@ -1,13 +1,22 @@
 require("@nomicfoundation/hardhat-toolbox");
 
 // 您提供的私钥
-const PRIVATE_KEY = "0x3272afed0bf366b6a7cf889543a320158ec25cd43760ff5b6fe7fb15bd3f234d";
+const PRIVATE_KEY = "0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e";
 // 您提供的RPC地址
 const CUSTOM_RPC_URL = "https://rpc.testchainv1.hetuscan.com";
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.28",
+  solidity: {
+    version: "0.8.28",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200
+      },
+      viaIR: true  // 添加这一行
+    }
+  },
   networks: {
     // 本地开发网络
     hardhat: {
