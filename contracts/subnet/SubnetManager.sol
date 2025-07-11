@@ -37,17 +37,6 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     uint256 public networkRateLimit = 1000;
     uint256 public lockReductionInterval = 10000;
     
-    event NetworkRegistered(
-        uint16 indexed netuid,
-        address indexed owner,
-        address alphaToken,
-        address ammPool,
-        uint256 lockedAmount,
-        uint256 poolAmount,
-        uint256 burnedAmount,
-        string name,
-        SubnetTypes.SubnetHyperparams hyperparams
-    );
     
     constructor(address _hetuToken, address _ammFactory)Ownable(msg.sender) {
         require(_hetuToken != address(0), "ZERO_HETU_ADDRESS");

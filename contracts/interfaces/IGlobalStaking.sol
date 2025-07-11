@@ -20,6 +20,19 @@ interface IGlobalStaking {
         bool isActive;                 // 是否活跃
     }
     
+        // 事件
+    event GlobalStakeAdded(address indexed user, uint256 amount);
+    event GlobalStakeRemoved(address indexed user, uint256 amount);
+    event SubnetAllocationChanged(
+        address indexed user,
+        uint16 indexed netuid,
+        uint256 oldAmount,
+        uint256 newAmount
+    );
+    event StakeLocked(address indexed user, uint16 indexed netuid, uint256 amount);
+    event StakeUnlocked(address indexed user, uint16 indexed netuid, uint256 amount);
+    event AuthorizedCallerUpdated(address indexed caller, bool authorized);
+
     // ============ Core Functions ============
     function addGlobalStake(uint256 amount) external;
     function removeGlobalStake(uint256 amount) external;

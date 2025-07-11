@@ -156,7 +156,7 @@ interface INeuronManager {
     
     /**
      * @dev 获取神经元信息
-     * @param netuid 子网ID
+     * @param netuid 子网ID 
      * @param account 账户地址
      * @return 神经元信息结构体
      */

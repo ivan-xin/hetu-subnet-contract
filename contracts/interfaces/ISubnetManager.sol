@@ -22,7 +22,8 @@ interface ISubnetManager {
         uint256 lockedAmount,
         uint256 poolAmount,
         uint256 burnedAmount,
-        string name
+        string name,
+        SubnetTypes.SubnetHyperparams hyperparams
     );
     
     /**
