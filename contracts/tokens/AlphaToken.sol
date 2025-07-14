@@ -65,14 +65,14 @@ contract AlphaToken is ERC20, Ownable, IAlphaToken {
     /**
      * @dev 更改铸造者（仅所有者）
      */
-    function changeMinter(address newMinter) external onlyOwner {
-        require(newMinter != address(0), "AlphaToken: ZERO_MINTER");
+    // function changeMinter(address newMinter) external onlyOwner {
+    //     require(newMinter != address(0), "AlphaToken: ZERO_MINTER");
         
-        address oldMinter = minter;
-        minter = newMinter;
+    //     address oldMinter = minter;
+    //     minter = newMinter;
         
-        emit MinterChanged(oldMinter, newMinter);
-    }
+    //     emit MinterChanged(oldMinter, newMinter);
+    // }
     
     /**
      * @dev 获取代币信息

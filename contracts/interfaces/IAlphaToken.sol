@@ -18,7 +18,7 @@ interface IAlphaToken is IERC20 {
 
     function mint(address to, uint256 amount) external;
     function burn(address from, uint256 amount) external;
-    function changeMinter(address newMinter) external;
+    // function changeMinter(address newMinter) external;
     
     // ============ View Functions ============
     
