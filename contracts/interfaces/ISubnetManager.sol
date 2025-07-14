@@ -29,11 +29,11 @@ interface ISubnetManager {
     /**
      * @dev 子网所有权转移事件
      */
-    event SubnetOwnershipTransferred(
-        uint16 indexed netuid, 
-        address indexed oldOwner, 
-        address indexed newOwner
-    );
+    // event SubnetOwnershipTransferred(
+    //     uint16 indexed netuid, 
+    //     address indexed oldOwner, 
+    //     address indexed newOwner
+    // );
     
     /**
      * @dev 子网信息更新事件
@@ -66,7 +66,7 @@ interface ISubnetManager {
      * @param netuid 子网ID
      * @param newOwner 新所有者地址
      */
-    function transferSubnetOwnership(uint16 netuid, address newOwner) external;
+    // function transferSubnetOwnership(uint16 netuid, address newOwner) external;
     
     /**
      * @dev 更新子网信息

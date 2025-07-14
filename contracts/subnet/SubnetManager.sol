@@ -177,21 +177,21 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     /**
      * @dev 转移子网所有权
      */
-    function transferSubnetOwnership(uint16 netuid, address newOwner) external {
-        require(subnetExists[netuid], "SUBNET_NOT_EXISTS");
-        require(subnets[netuid].owner == msg.sender, "NOT_OWNER");
-        require(newOwner != address(0), "ZERO_ADDRESS");
-        require(newOwner != msg.sender, "SAME_OWNER");
+    // function transferSubnetOwnership(uint16 netuid, address newOwner) external {
+    //     require(subnetExists[netuid], "SUBNET_NOT_EXISTS");
+    //     require(subnets[netuid].owner == msg.sender, "NOT_OWNER");
+    //     require(newOwner != address(0), "ZERO_ADDRESS");
+    //     require(newOwner != msg.sender, "SAME_OWNER");
         
-        address oldOwner = subnets[netuid].owner;
-        subnets[netuid].owner = newOwner;
+    //     address oldOwner = subnets[netuid].owner;
+    //     subnets[netuid].owner = newOwner;
         
-        // 更新所有权映射
-        _removeFromOwnerSubnets(oldOwner, netuid);
-        ownerSubnets[newOwner].push(netuid);
+    //     // 更新所有权映射
+    //     _removeFromOwnerSubnets(oldOwner, netuid);
+    //     ownerSubnets[newOwner].push(netuid);
         
-        emit SubnetOwnershipTransferred(netuid, oldOwner, newOwner);
-    }
+    //     emit SubnetOwnershipTransferred(netuid, oldOwner, newOwner);
+    // }
     
     /**
      * @dev 更新子网信息
