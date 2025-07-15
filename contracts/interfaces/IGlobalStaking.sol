@@ -20,7 +20,7 @@ interface IGlobalStaking {
         bool isActive;                 // 是否活跃
     }
     
-        // 事件
+    // 事件
     event GlobalStakeAdded(address indexed user, uint256 amount);
     event GlobalStakeRemoved(address indexed user, uint256 amount);
     event SubnetAllocationChanged(

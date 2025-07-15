@@ -26,6 +26,12 @@ interface ISubnetManager {
         SubnetTypes.SubnetHyperparams hyperparams
     );
     
+    event SubnetActivated(
+        uint16 indexed netuid,
+        address indexed owner,
+        uint256 timestamp,
+        uint256 blockNumber
+    );
     /**
      * @dev 子网所有权转移事件
      */

@@ -173,6 +173,26 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
         return netuid;
     }
     
+        /**
+     * @dev 启动子网（仅子网所有者）
+     */
+    function activateSubnet(uint16 netuid) external nonReentrant {
+        require(subnetExists[netuid], "SUBNET_NOT_EXISTS");
+        require(subnets[netuid].owner == msg.sender, "NOT_OWNER");
+        require(!subnets[netuid].isActive, "SUBNET_ALREADY_ACTIVE");
+        
+        // 启动子网
+        subnets[netuid].isActive = true;
+        
+        // 发出启动事件
+        emit SubnetActivated(
+            netuid,
+            msg.sender,
+            block.timestamp,
+            block.number
+        );
+    }
+    
 
     /**
      * @dev 转移子网所有权
