@@ -7,18 +7,18 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IAlphaToken.sol";
 /**
  * @title AlphaToken
- * @dev 子网的Alpha代币合约
- * 每个子网都有自己独特的Alpha代币
+ * @dev Alpha token contract for subnets
+ * Each subnet has its own unique Alpha token
  */
 contract AlphaToken is ERC20, Ownable, IAlphaToken {
     
-    // 子网ID
+    // Subnet ID
     uint16 public immutable netuid;
     
-    // 铸造者地址（通常是SubnetManager）
+    // Minter address (usually SubnetManager)
     address public minter;
     
-    // 代币创建时间
+    // Token creation time
     uint256 public immutable createdAt;
     
     modifier onlyMinter() {
@@ -40,7 +40,7 @@ contract AlphaToken is ERC20, Ownable, IAlphaToken {
     }
     
     /**
-     * @dev 铸造代币（仅铸造者）
+     * @dev Mint tokens (only minter)
      */
     function mint(address to, uint256 amount) external onlyMinter {
         require(to != address(0), "AlphaToken: ZERO_ADDRESS");
@@ -51,7 +51,7 @@ contract AlphaToken is ERC20, Ownable, IAlphaToken {
     }
     
     /**
-     * @dev 燃烧代币（仅铸造者）
+     * @dev Burn tokens (only minter)
      */
     function burn(address from, uint256 amount) external onlyMinter {
         require(from != address(0), "AlphaToken: ZERO_ADDRESS");
@@ -63,7 +63,7 @@ contract AlphaToken is ERC20, Ownable, IAlphaToken {
     }
     
     /**
-     * @dev 更改铸造者（仅所有者）
+     * @dev Change minter (only owner)
      */
     // function changeMinter(address newMinter) external onlyOwner {
     //     require(newMinter != address(0), "AlphaToken: ZERO_MINTER");
@@ -75,7 +75,7 @@ contract AlphaToken is ERC20, Ownable, IAlphaToken {
     // }
     
     /**
-     * @dev 获取代币信息
+     * @dev Get token information
      */
     function getTokenInfo() external view returns (
         string memory _name,

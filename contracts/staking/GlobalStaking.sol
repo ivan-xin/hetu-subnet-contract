@@ -9,35 +9,35 @@ import "../interfaces/IGlobalStaking.sol";
 
 /**
  * @title GlobalStaking
- * @dev 全局质押合约 - 管理HETU质押以获得参与资格
- * 职责：
- * 1. 管理用户的全局HETU质押
- * 2. 管理质押到各子网的分配
- * 3. 提供质押查询接口给NeuronManager
+ * @dev Global Staking Contract - Manages HETU staking for participation eligibility
+ * Responsibilities:
+ * 1. Manages users' global HETU staking
+ * 2. Manages stake allocation to various subnets
+ * 3. Provides staking query interface for NeuronManager
  */
 contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
     IERC20 public immutable hetuToken;
     
-    // 授权的合约地址（NeuronManager等）
+    // Authorized contract addresses (NeuronManager, etc.)
     mapping(address => bool) public authorizedCallers;
     
-    // 用户质押映射
+    // User staking mapping
     mapping(address => StakeInfo) private userStakes;
     mapping(address => uint256) public totalUserStake;
     
-    // 子网质押统计
+    // Subnet staking statistics
     mapping(uint16 => uint256) public subnetTotalStake;
     mapping(uint16 => mapping(address => uint256)) public subnetUserStake;
     
-    // 锁定的质押（用于神经元注册）
+    // Locked stakes (for neuron registration)
     mapping(address => mapping(uint16 => uint256)) public lockedStake;
     
-    // 子网分配信息
+    // Subnet allocation information
     mapping(address => mapping(uint16 => SubnetAllocation)) private subnetAllocations;
     mapping(address => uint16[]) private userAllocatedSubnets;
     uint256 private totalStaked;
 
-    // 最小质押要求
+    // Minimum staking requirements
     uint256 public constant MIN_STAKE_TO_PARTICIPATE = 100 ether; // 100 HETU
     uint256 public constant MIN_SUBNET_ALLOCATION = 10 ether;     // 10 HETU
     
@@ -53,7 +53,7 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
     }
     
     /**
-     * @dev 授权调用者（如NeuronManager）
+     * @dev Authorize caller (such as NeuronManager)
      */
     function setAuthorizedCaller(address caller, bool authorized) external onlyOwner {
         require(caller != address(0), "ZERO_ADDRESS");
@@ -62,7 +62,7 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
     }
     
     /**
-     * @dev 添加全局质押 - 用户质押HETU获得参与资格
+     * @dev Add global stake - Users stake HETU to gain participation eligibility
      */
     function addGlobalStake(uint256 amount) external nonReentrant {
         require(amount > 0, "AMOUNT_ZERO");
@@ -81,7 +81,7 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
     }
     
     /**
-     * @dev 移除全局质押
+     * @dev Remove global stake
      */
     function removeGlobalStake(uint256 amount) external nonReentrant {
         require(amount > 0, "AMOUNT_ZERO");
@@ -102,9 +102,9 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
     }
 
     /**
-     * @dev 分配质押到子网
-     * @param netuid 子网ID
-     * @param amount 分配数量
+     * @dev Allocate stake to subnet
+     * @param netuid Subnet ID
+     * @param amount Allocation amount
      */
     function allocateToSubnet(uint16 netuid, uint256 amount) external nonReentrant {
         require(amount >= MIN_SUBNET_ALLOCATION || amount == 0, "BELOW_MIN_ALLOCATION");
@@ -115,28 +115,28 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
         uint256 oldAmount = allocation.allocated;
         
         if (amount > oldAmount) {
-            // 增加分配
+            // Increase allocation
             uint256 additional = amount - oldAmount;
             require(stakeInfo.availableForAllocation >= additional, "INSUFFICIENT_AVAILABLE_STAKE");
             stakeInfo.availableForAllocation -= additional;
             stakeInfo.totalAllocated += additional;
         } else if (amount < oldAmount) {
-            // 减少分配 - 这里不检查神经元门槛，由NeuronManager在外部检查
+            // Decrease allocation - neuron threshold not checked here, checked externally by NeuronManager
             uint256 reduction = oldAmount - amount;
             stakeInfo.availableForAllocation += reduction;
             stakeInfo.totalAllocated -= reduction;
         }
         
-        // 更新分配
+        // Update allocation
         allocation.allocated = amount;
         allocation.lastUpdateBlock = block.number;
         allocation.isActive = amount > 0;
         
-        // 更新子网统计
+        // Update subnet statistics
         subnetTotalStake[netuid] = subnetTotalStake[netuid] - oldAmount + amount;
         subnetUserStake[netuid][msg.sender] = amount;
         
-        // 更新分配列表
+        // Update allocation list
         if (oldAmount == 0 && amount > 0) {
             userAllocatedSubnets[msg.sender].push(netuid);
         } else if (oldAmount > 0 && amount == 0) {
@@ -147,11 +147,11 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
     }
     
     /**
-     * @dev 受限制的分配质押到子网（由授权合约调用，如NeuronManager）
-     * @param user 用户地址
-     * @param netuid 子网ID
-     * @param amount 分配数量
-     * @param minThreshold 最小门槛（由调用者提供）
+     * @dev Restricted allocation of stake to subnet (called by authorized contracts like NeuronManager)
+     * @param user User address
+     * @param netuid Subnet ID
+     * @param amount Allocation amount
+     * @param minThreshold Minimum threshold (provided by caller)
      */
     function allocateToSubnetWithThreshold(
         address user, 
@@ -167,28 +167,28 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
         uint256 oldAmount = allocation.allocated;
         
         if (amount > oldAmount) {
-            // 增加分配
+            // Increase allocation
             uint256 additional = amount - oldAmount;
             require(stakeInfo.availableForAllocation >= additional, "INSUFFICIENT_AVAILABLE_STAKE");
             stakeInfo.availableForAllocation -= additional;
             stakeInfo.totalAllocated += additional;
         } else if (amount < oldAmount) {
-            // 减少分配
+            // Decrease allocation
             uint256 reduction = oldAmount - amount;
             stakeInfo.availableForAllocation += reduction;
             stakeInfo.totalAllocated -= reduction;
         }
         
-        // 更新分配
+        // Update allocation
         allocation.allocated = amount;
         allocation.lastUpdateBlock = block.number;
         allocation.isActive = amount > 0;
         
-        // 更新子网统计
+        // Update subnet statistics
         subnetTotalStake[netuid] = subnetTotalStake[netuid] - oldAmount + amount;
         subnetUserStake[netuid][user] = amount;
         
-        // 更新分配列表
+        // Update allocation list
         if (oldAmount == 0 && amount > 0) {
             userAllocatedSubnets[user].push(netuid);
         } else if (oldAmount > 0 && amount == 0) {
@@ -199,7 +199,7 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
     }
     
     /**
-     * @dev 领取奖励 (暂时为空实现)
+     * @dev Claim rewards (empty implementation for now)
      */
     function claimRewards() external nonReentrant {
         StakeInfo storage stakeInfo = userStakes[msg.sender];
@@ -207,11 +207,11 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
         require(rewards > 0, "NO_REWARDS");
         
         stakeInfo.pendingRewards = 0;
-        // TODO: 实现奖励分发逻辑
+        // TODO: Implement reward distribution logic
     }
     
     /**
-     * @dev 锁定质押（神经元注册时调用）
+     * @dev Lock stake (called during neuron registration)
      */
     function lockSubnetStake(address user, uint16 netuid, uint256 amount) 
         external 
@@ -226,7 +226,7 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
     }
     
     /**
-     * @dev 解锁质押（神经元注销时调用）
+     * @dev Unlock stake (called during neuron deregistration)
      */
     function unlockSubnetStake(address user, uint16 netuid, uint256 amount) 
         external 
@@ -241,7 +241,7 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
     }
     
     /**
-     * @dev 检查用户是否有足够质押成为神经元
+     * @dev Check if user has sufficient stake to become a neuron
      */
     function canBecomeNeuron(address user, uint16 netuid, uint256 requiredAmount) 
         external 
@@ -252,14 +252,14 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
     }
     
     /**
-     * @dev 获取用户在子网的有效质押
+     * @dev Get user's effective stake in subnet
      */
     function getEffectiveStake(address user, uint16 netuid) external view returns (uint256) {
         return subnetUserStake[netuid][user];
     }
     
     /**
-     * @dev 获取用户在子网的可用质押（未锁定的）
+     * @dev Get user's available stake in subnet (unlocked)
      */
     function getAvailableStake(address user, uint16 netuid) external view returns (uint256) {
         uint256 total = subnetUserStake[netuid][user];
@@ -268,28 +268,28 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
     }
     
     /**
-     * @dev 获取用户质押信息
+     * @dev Get user's stake information
      */
     function getStakeInfo(address user) external view returns (StakeInfo memory) {
         return userStakes[user];
     }
     
     /**
-     * @dev 获取子网分配信息
+     * @dev Get subnet allocation information
      */
     function getSubnetAllocation(address user, uint16 netuid) external view returns (SubnetAllocation memory) {
         return subnetAllocations[user][netuid];
     }
     
     /**
-     * @dev 获取总质押量
+     * @dev Get total staked amount
      */
     function getTotalStaked() external view returns (uint256) {
         return totalStaked;
     }
     
     /**
-     * @dev 获取用户的质押信息
+     * @dev Get user's staking information
      */
     function getUserStakeInfo(address user) external view returns (
         uint256 totalStaked_,
@@ -305,23 +305,23 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
     }
     
     /**
-     * @dev 获取用户在特定子网的锁定质押
+     * @dev Get user's locked stake in specific subnet
      */
     function getLockedStake(address user, uint16 netuid) external view returns (uint256) {
         return lockedStake[user][netuid];
     }
     
     /**
-     * @dev 检查用户是否有参与资格
+     * @dev Check if user has participation eligibility
      */
     function hasParticipationEligibility(address user) external view returns (bool) {
         return totalUserStake[user] >= MIN_STAKE_TO_PARTICIPATE;
     }
     
-    // ============ 内部函数 ============
+    // ============ Internal Functions ============
     
     /**
-     * @dev 从已分配子网列表中移除
+     * @dev Remove from allocated subnets list
      */
     function _removeFromAllocatedSubnets(address user, uint16 netuid) internal {
         uint16[] storage subnets = userAllocatedSubnets[user];

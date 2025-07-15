@@ -6,19 +6,19 @@ import "../amm/SubnetAMM.sol";
 
 /**
  * @title SubnetAMMFactory
- * @dev 创建和管理SubnetAMM池子的工厂合约
- * 工厂创建者也无法操作具体的池子
+ * @dev Factory contract for creating and managing SubnetAMM pools
+ * Even factory creators cannot operate specific pools
  */
 contract SubnetAMMFactory {
-    // 池子映射
+    // Pool mappings
     mapping(uint16 => address) public getPool; // netuid => pool address
     mapping(address => bool) public isPool;
     address[] public allPools;
     
-    // 系统地址
+    // System address
     address public immutable systemAddress;
     
-    // 创建者（仅记录，无特殊权限）
+    // Creator (only recorded, no special permissions)
     address public immutable creator;
     uint256 public immutable createdAt;
     
@@ -38,8 +38,8 @@ contract SubnetAMMFactory {
     }
     
     /**
-     * @dev 创建新的AMM池子
-     * 任何人都可以创建，但创建者无法操作池子
+     * @dev Create new AMM pool
+     * Anyone can create, but creators cannot operate the pool
      */
     function createPool(
         address hetuToken,
@@ -56,7 +56,7 @@ contract SubnetAMMFactory {
         require(getPool[netuid] == address(0), "Factory: POOL_EXISTS");
         require(minimumPoolLiquidity > 0, "Factory: ZERO_MIN_LIQUIDITY");
         
-        // 创建新的AMM池子
+        // Create new AMM pool
         pool = address(new SubnetAMM(
             hetuToken,
             alphaToken,
@@ -67,7 +67,7 @@ contract SubnetAMMFactory {
             minimumPoolLiquidity
         ));
         
-        // 记录池子信息
+        // Record pool information
         getPool[netuid] = pool;
         isPool[pool] = true;
         allPools.push(pool);
@@ -76,14 +76,14 @@ contract SubnetAMMFactory {
     }
     
     /**
-     * @dev 获取所有池子数量
+     * @dev Get total number of pools
      */
     function allPoolsLength() external view returns (uint256) {
         return allPools.length;
     }
     
     /**
-     * @dev 获取工厂信息
+     * @dev Get factory information
      */
     function getFactoryInfo() external view returns (
         address _creator,
@@ -95,7 +95,7 @@ contract SubnetAMMFactory {
     }
     
     /**
-     * @dev 批量获取池子信息
+     * @dev Batch get pool information
      */
     function getPoolsInfo(uint256 start, uint256 end) external view returns (
         address[] memory pools,
@@ -129,4 +129,3 @@ contract SubnetAMMFactory {
         }
     }
 }
-

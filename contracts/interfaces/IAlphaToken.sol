@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title IAlphaToken
- * @dev Alpha代币接口 - 基于AlphaToken.sol的实现
+ * @dev Alpha Token Interface - Based on AlphaToken.sol implementation
  */
 interface IAlphaToken is IERC20 {
     

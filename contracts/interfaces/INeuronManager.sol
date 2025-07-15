@@ -7,14 +7,14 @@ import "./ISubnetManager.sol";
 
 /**
  * @title INeuronManager
- * @dev 神经元管理器接口 - 定义神经元注册、管理和查询的标准接口
+ * @dev Neuron Manager Interface - Defines standard interfaces for neuron registration, management and queries
  */
 interface INeuronManager {
     
     // ============ Events ============
     
     /**
-     * @dev 神经元注册事件
+     * @dev Neuron registration event
      */
     event NeuronRegistered(
         uint16 indexed netuid, 
@@ -30,7 +30,7 @@ interface INeuronManager {
     );
     
     /**
-     * @dev 神经元注销事件
+     * @dev Neuron deregistration event
      */
     event NeuronDeregistered(
         uint16 indexed netuid, 
@@ -39,7 +39,7 @@ interface INeuronManager {
     );
     
     /**
-     * @dev 质押分配变更事件
+     * @dev Stake allocation change event
      */
     event StakeAllocationChanged(
         uint16 indexed netuid,
@@ -52,7 +52,7 @@ interface INeuronManager {
     );
     
     /**
-     * @dev 服务信息更新事件
+     * @dev Service information update event
      */
     event ServiceUpdated(
         uint16 indexed netuid, 
@@ -65,7 +65,7 @@ interface INeuronManager {
     );
     
     /**
-     * @dev 奖励分发事件
+     * @dev Rewards distribution event
      */
     event RewardsDistributed(
         uint16 indexed netuid,
@@ -77,13 +77,13 @@ interface INeuronManager {
     // ============ Core Functions ============
     
     /**
-     * @dev 注册神经元
-     * @param netuid 子网ID
-     * @param isValidatorRole 是否选择验证者角色
-     * @param axonEndpoint Axon服务端点
-     * @param axonPort Axon服务端口
-     * @param prometheusEndpoint Prometheus监控端点
-     * @param prometheusPort Prometheus监控端口
+     * @dev Register neuron
+     * @param netuid Subnet ID
+     * @param isValidatorRole Whether to choose validator role
+     * @param axonEndpoint Axon service endpoint
+     * @param axonPort Axon service port
+     * @param prometheusEndpoint Prometheus monitoring endpoint
+     * @param prometheusPort Prometheus monitoring port
      */
     function registerNeuron(
         uint16 netuid,
@@ -95,16 +95,16 @@ interface INeuronManager {
     ) external;
     
     /**
-     * @dev 注销神经元
-     * @param netuid 子网ID
+     * @dev Deregister neuron
+     * @param netuid Subnet ID
      */
     function deregisterNeuron(uint16 netuid) external;
     
     /**
-     * @dev 更新质押分配
-     * @param netuid 子网ID
-     * @param account 账户地址
-     * @param newStake 新的质押量
+     * @dev Update stake allocation
+     * @param netuid Subnet ID
+     * @param account Account address
+     * @param newStake New stake amount
      */
     function updateStakeAllocation(
         uint16 netuid,
@@ -113,12 +113,12 @@ interface INeuronManager {
     ) external;
     
     /**
-     * @dev 更新服务信息
-     * @param netuid 子网ID
-     * @param axonEndpoint 新的Axon端点
-     * @param axonPort 新的Axon端口
-     * @param prometheusEndpoint 新的Prometheus端点
-     * @param prometheusPort 新的Prometheus端口
+     * @dev Update service information
+     * @param netuid Subnet ID
+     * @param axonEndpoint New Axon endpoint
+     * @param axonPort New Axon port
+     * @param prometheusEndpoint New Prometheus endpoint
+     * @param prometheusPort New Prometheus port
      */
     function updateService(
         uint16 netuid,
@@ -129,10 +129,10 @@ interface INeuronManager {
     ) external;
     
     /**
-     * @dev 分发奖励（仅奖励分发者可调用）
-     * @param netuid 子网ID
-     * @param accounts 接收奖励的账户数组
-     * @param amounts 对应的奖励数量数组
+     * @dev Distribute rewards (only callable by reward distributor)
+     * @param netuid Subnet ID
+     * @param accounts Array of accounts receiving rewards
+     * @param amounts Array of corresponding reward amounts
      */
     function distributeRewards(
         uint16 netuid,
@@ -141,10 +141,10 @@ interface INeuronManager {
     ) external;
     
     /**
-     * @dev 批量更新神经元质押
-     * @param netuid 子网ID
-     * @param accounts 账户地址数组
-     * @param newStakes 新质押量数组
+     * @dev Batch update neuron stakes
+     * @param netuid Subnet ID
+     * @param accounts Array of account addresses
+     * @param newStakes Array of new stake amounts
      */
     function batchUpdateStakeAllocations(
         uint16 netuid,
@@ -155,58 +155,58 @@ interface INeuronManager {
     // ============ Query Functions ============
     
     /**
-     * @dev 获取神经元信息
-     * @param netuid 子网ID 
-     * @param account 账户地址
-     * @return 神经元信息结构体
+     * @dev Get neuron information
+     * @param netuid Subnet ID
+     * @param account Account address
+     * @return Neuron information struct
      */
     function getNeuronInfo(uint16 netuid, address account) 
         external view returns (SubnetTypes.NeuronInfo memory);
 
     
     /**
-     * @dev 检查是否为神经元
-     * @param netuid 子网ID
-     * @param account 账户地址
-     * @return 是否为神经元
+     * @dev Check if is neuron
+     * @param netuid Subnet ID
+     * @param account Account address
+     * @return Whether is neuron
      */
     function isNeuron(uint16 netuid, address account) external view returns (bool);
     
     /**
-     * @dev 检查是否为验证者
-     * @param netuid 子网ID
-     * @param account 账户地址
-     * @return 是否为验证者
+     * @dev Check if is validator
+     * @param netuid Subnet ID
+     * @param account Account address
+     * @return Whether is validator
      */
     function isValidator(uint16 netuid, address account) external view returns (bool);
     
     /**
-     * @dev 获取子网神经元数量
-     * @param netuid 子网ID
-     * @return 神经元总数
+     * @dev Get subnet neuron count
+     * @param netuid Subnet ID
+     * @return Total number of neurons
      */
     function getSubnetNeuronCount(uint16 netuid) external view returns (uint256);
     
     /**
-     * @dev 获取子网验证者数量
-     * @param netuid 子网ID
-     * @return 验证者总数
+     * @dev Get subnet validator count
+     * @param netuid Subnet ID
+     * @return Total number of validators
      */
     function getSubnetValidatorCount(uint16 netuid) external view returns (uint256);
     
     /**
-     * @dev 获取子网所有验证者
-     * @param netuid 子网ID
-     * @return 验证者地址数组
+     * @dev Get all subnet validators
+     * @param netuid Subnet ID
+     * @return Array of validator addresses
      */
     function getSubnetValidators(uint16 netuid) external view returns (address[] memory);
     
     /**
-     * @dev 检查用户是否可以注册为神经元
-     * @param user 用户地址
-     * @param netuid 子网ID
-     * @param isValidatorRole 是否选择验证者角色
-     * @return 是否可以注册
+     * @dev Check if user can register as neuron
+     * @param user User address
+     * @param netuid Subnet ID
+     * @param isValidatorRole Whether choosing validator role
+     * @return Whether can register
      */
     function canRegisterNeuron(address user, uint16 netuid, bool isValidatorRole) 
         external view returns (bool);
@@ -214,22 +214,22 @@ interface INeuronManager {
     // ============ State Variables Access ============
     
     /**
-     * @dev 获取子网管理器地址
+     * @dev Get subnet manager address
      */
     function subnetManager() external view returns (ISubnetManager);
     
     /**
-     * @dev 获取全局质押合约地址
+     * @dev Get global staking contract address
      */
     function globalStaking() external view returns (IGlobalStaking);
     
     /**
-     * @dev 获取奖励分发者地址
+     * @dev Get reward distributor address
      */
     function rewardDistributor() external view returns (address);
     
     /**
-     * @dev 获取神经元信息
+     * @dev Get neuron information
      */
     function neurons(uint16 netuid, address account) external view returns (
         address account_,
@@ -247,18 +247,18 @@ interface INeuronManager {
     );
     
     /**
-     * @dev 获取子网神经元列表
-     * @param netuid 子网ID
-     * @param index 索引
-     * @return 对应索引的神经元地址
+     * @dev Get subnet neuron list
+     * @param netuid Subnet ID
+     * @param index Index
+     * @return Neuron address at corresponding index
      */
     function neuronList(uint16 netuid, uint256 index) external view returns (address);
     
     // ============ Admin Functions ============
     
     /**
-     * @dev 设置奖励分发者地址（仅所有者）
-     * @param _rewardDistributor 新的奖励分发者地址
+     * @dev Set reward distributor address (owner only)
+     * @param _rewardDistributor New reward distributor address
      */
     function setRewardDistributor(address _rewardDistributor) external;
 

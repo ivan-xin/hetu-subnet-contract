@@ -14,7 +14,7 @@ import "./DefaultHyperparams.sol";
 
 /**
  * @title SubnetManager
- * @dev 子网管理器
+ * @dev Subnet Manager
  */
 contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     using DefaultHyperparams for SubnetTypes.SubnetHyperparams;
@@ -25,12 +25,12 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     mapping(uint16 => SubnetTypes.SubnetInfo) public subnets;
     mapping(uint16 => SubnetTypes.SubnetHyperparams) public subnetHyperparams;
     mapping(uint16 => bool) public subnetExists;
-    mapping(address => uint16[]) public ownerSubnets; // 一个用户可以拥有多个子网
+    mapping(address => uint16[]) public ownerSubnets; // A user can own multiple subnets
     
     uint16 public totalNetworks;
     uint16 public nextNetuid = 1;
     
-    // 网络参数
+    // Network parameters
     uint256 public networkMinLock = 100 * 1e18;
     uint256 public networkLastLock;
     uint256 public networkLastLockBlock;
@@ -48,7 +48,7 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     }
     
     /**
-     * @dev 注册新子网 - 简化版本
+     * @dev Register new subnet - Simplified version
      */
     function registerNetwork(
         string calldata name,
@@ -67,7 +67,7 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     }
     
     /**
-     * @dev 使用部分自定义超参数注册子网（其余使用默认值）
+     * @dev Register subnet with partial custom hyperparameters (rest use default values)
      */
     function registerNetworkWithPartialCustom(
         string calldata name,
@@ -77,13 +77,13 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
         SubnetTypes.SubnetHyperparams calldata customHyperparams,
         bool[21] calldata useCustomFlags
     ) external nonReentrant returns (uint16 netuid) {
-        // 合并自定义参数与默认参数
+        // Merge custom parameters with defaults
         SubnetTypes.SubnetHyperparams memory mergedParams = DefaultHyperparams.mergeWithDefaults(
             customHyperparams,
             useCustomFlags
         );
         
-        // 验证合并后的超参数
+        // Validate merged hyperparameters
         require(DefaultHyperparams.validateHyperparams(mergedParams), "INVALID_MERGED_HYPERPARAMS");
         
         return _registerNetworkWithHyperparams(
@@ -97,7 +97,7 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     
 
     /**
-     * @dev 内部注册网络函数
+     * @dev Internal network registration function
      */
     function _registerNetworkWithHyperparams(
         string calldata name,
@@ -108,38 +108,38 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     ) internal returns (uint16 netuid) {
         address owner = msg.sender;
         
-        // 基本验证
+        // Basic validation
         require(bytes(name).length > 0, "EMPTY_NAME");
         require(bytes(tokenName).length > 0, "EMPTY_TOKEN_NAME");
         require(bytes(tokenSymbol).length > 0, "EMPTY_TOKEN_SYMBOL");
         
-        // 速率限制
+        // Rate limit
         require(
             block.number - networkLastLockBlock >= networkRateLimit,
             "RATE_LIMIT_EXCEEDED"
         );
         
-        // 计算并锁定成本
+        // Calculate and lock cost
         uint256 lockAmount = getNetworkLockCost();
         hetuToken.transferFrom(owner, address(this), lockAmount);
         
-        // 获取netuid
+        // Get netuid
         netuid = getNextNetuid();
         
-        // 计算池子资金
+        // Calculate pool funds
         uint256 poolInitialTao = networkMinLock;
         uint256 burnedAmount = lockAmount > poolInitialTao ? lockAmount - poolInitialTao : 0;
         
-        // 创建Alpha代币和AMM池子
+        // Create Alpha token and AMM pool
         address alphaTokenAddress = _createAlphaToken(netuid, tokenName, tokenSymbol);
         address ammPoolAddress = _createAMMPool(netuid, alphaTokenAddress, poolInitialTao);
         
-        // 燃烧超额代币
+        // Burn excess tokens
         if (burnedAmount > 0) {
             _burnTokens(burnedAmount);
         }
         
-        // 记录子网信息
+        // Record subnet information
         subnets[netuid] = SubnetTypes.SubnetInfo({
             netuid: netuid,
             owner: owner,
@@ -154,14 +154,14 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
             description: description
         });
         
-        // 设置子网超参数
+        // Set subnet hyperparameters
         subnetHyperparams[netuid] = hyperparams;
         
         subnetExists[netuid] = true;
         ownerSubnets[owner].push(netuid);
         totalNetworks++;
         
-        // 更新参数
+        // Update parameters
         networkLastLock = lockAmount;
         networkLastLockBlock = block.number;
         
@@ -174,17 +174,17 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     }
     
         /**
-     * @dev 启动子网（仅子网所有者）
+     * @dev Activate subnet (subnet owner only)
      */
     function activateSubnet(uint16 netuid) external nonReentrant {
         require(subnetExists[netuid], "SUBNET_NOT_EXISTS");
         require(subnets[netuid].owner == msg.sender, "NOT_OWNER");
         require(!subnets[netuid].isActive, "SUBNET_ALREADY_ACTIVE");
         
-        // 启动子网
+        // Activate subnet
         subnets[netuid].isActive = true;
         
-        // 发出启动事件
+        // Emit activation event
         emit SubnetActivated(
             netuid,
             msg.sender,
@@ -195,7 +195,7 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     
 
     /**
-     * @dev 转移子网所有权
+     * @dev Transfer subnet ownership
      */
     // function transferSubnetOwnership(uint16 netuid, address newOwner) external {
     //     require(subnetExists[netuid], "SUBNET_NOT_EXISTS");
@@ -206,7 +206,7 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     //     address oldOwner = subnets[netuid].owner;
     //     subnets[netuid].owner = newOwner;
         
-    //     // 更新所有权映射
+    //     // Update ownership mapping
     //     _removeFromOwnerSubnets(oldOwner, netuid);
     //     ownerSubnets[newOwner].push(netuid);
         
@@ -214,7 +214,7 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     // }
     
     /**
-     * @dev 更新子网信息
+     * @dev Update subnet information
      */
     function updateSubnetInfo(
         uint16 netuid,
@@ -233,7 +233,7 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     
 
     /**
-     * @dev 获取子网超参数
+     * @dev Get subnet hyperparameters
      */
     function getSubnetHyperparams(uint16 netuid) external view returns (SubnetTypes.SubnetHyperparams memory) {
         require(subnetExists[netuid], "SUBNET_NOT_EXISTS");
@@ -241,14 +241,14 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     }
 
     /**
-     * @dev 获取用户拥有的所有子网
+     * @dev Get all subnets owned by user
      */
     function getUserSubnets(address user) external view returns (uint16[] memory) {
         return ownerSubnets[user];
     }
     
     /**
-     * @dev 获取子网信息结构体
+     * @dev Get subnet info struct
      */
     function getSubnetInfo(uint16 netuid) external view override returns (SubnetTypes.SubnetInfo memory) {
         require(subnetExists[netuid], "SUBNET_NOT_EXISTS");
@@ -256,7 +256,7 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     }
     
     /**
-     * @dev 获取子网超参数
+     * @dev Get subnet hyperparameters
      */
     function getSubnetParams(uint16 netuid) external view override returns (SubnetTypes.SubnetHyperparams memory) {
         require(subnetExists[netuid], "SUBNET_NOT_EXISTS");
@@ -264,7 +264,7 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     }
 
     /**
-     * @dev 获取子网详细信息
+     * @dev Get subnet detailed information
      */
     function getSubnetDetails(uint16 netuid) external view returns (
         SubnetTypes.SubnetInfo memory subnetInfo,
@@ -277,7 +277,7 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
         
         subnetInfo = subnets[netuid];
         
-        // 获取AMM池子信息
+        // Get AMM pool information
         SubnetAMM pool = SubnetAMM(subnetInfo.ammPool);
         (
             ,
@@ -295,7 +295,7 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
         alphaReserve = _subnetAlphaIn;
     }
     
-    // 内部函数保持不变...
+    // Internal functions remain unchanged...
     function _createAlphaToken(uint16 netuid, string calldata name, string calldata symbol) internal returns (address) {
         AlphaToken alphaToken = new AlphaToken(name, symbol, address(this), netuid);
         uint256 initialAlphaAmount = networkMinLock;

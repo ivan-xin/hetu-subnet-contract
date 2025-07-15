@@ -1,29 +1,29 @@
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
 
 module.exports = buildModule("HetuSubnetModule", (m) => {
-  // 参数
+  // Parameters
   const deployer = m.getAccount(0);
 
-  // 1. 部署 HETU Token (使用 WHETU 作为测试代币)
+  // 1. Deploy HETU Token (use WHETU as test token)
   const hetuToken = m.contract("WHETU");
 
-  // 2. 部署 AMM Factory
+  // 2. Deploy AMM Factory
   const ammFactory = m.contract("SubnetAMMFactory", [deployer]);
 
-  // 3. 部署 GlobalStaking
+  // 3. Deploy GlobalStaking
   const globalStaking = m.contract("GlobalStaking", [hetuToken, deployer]);
 
-  // 4. 部署 SubnetManager
+  // 4. Deploy SubnetManager
   const subnetManager = m.contract("SubnetManager", [hetuToken, ammFactory]);
 
-  // 5. 部署 NeuronManager
+  // 5. Deploy NeuronManager
   const neuronManager = m.contract("NeuronManager", [
     subnetManager,
     globalStaking,
     deployer
   ]);
 
-  // 6. 设置权限
+  // 6. Set Permissions
   m.call(globalStaking, "setAuthorizedCaller", [neuronManager, true]);
   m.call(neuronManager, "setRewardDistributor", [deployer]);
 

@@ -15,9 +15,9 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     
     ISubnetManager public immutable subnetManager;
     IGlobalStaking public immutable globalStaking;
-    address public rewardDistributor; // native code 调用地址
+    address public rewardDistributor; // Address called by native code
     
-    // 核心存储
+    // Core storage
     mapping(uint16 => mapping(address => SubnetTypes.NeuronInfo)) public neurons;
     mapping(uint16 => address[]) public neuronList;
     
@@ -40,7 +40,7 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     }
     
     /**
-     * @dev 设置奖励分发地址（native code 地址）
+     * @dev Set reward distributor address (native code address)
      */
     function setRewardDistributor(address _rewardDistributor) external onlyOwner {
         require(_rewardDistributor != address(0), "ZERO_ADDRESS");
@@ -48,7 +48,7 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     }
     
     /**
-     * @dev 获取子网验证者数量
+     * @dev Get subnet validator count
      */
     function getSubnetValidatorCount(uint16 netuid) public view returns (uint256) {
         uint256 count = 0;
@@ -62,7 +62,7 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     }
     
     /**
-     * @dev 注册神经元
+     * @dev Register neuron
      */
     function registerNeuron(
         uint16 netuid,
@@ -72,56 +72,56 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
         string calldata prometheusEndpoint,
         uint32 prometheusPort
     ) external nonReentrant {
-        // 1. 基础检查
+        // 1. Basic checks
         require(subnetManager.subnetExists(netuid), "SUBNET_NOT_EXISTS");
         require(!neurons[netuid][msg.sender].isActive, "ALREADY_REGISTERED");
         
-        // 2. 检查用户是否有参与资格（质押了足够的HETU）
+        // 2. Check if user has participation eligibility (staked enough HETU)
         require(globalStaking.hasParticipationEligibility(msg.sender), "NO_PARTICIPATION_ELIGIBILITY");
         
-        // 3. 获取子网信息和参数
+        // 3. Get subnet info and parameters
         SubnetTypes.SubnetInfo memory subnetInfo = subnetManager.getSubnetInfo(netuid);
         SubnetTypes.SubnetHyperparams memory params = subnetManager.getSubnetParams(netuid);
         
         require(subnetInfo.isActive, "SUBNET_NOT_ACTIVE");
         
-        // 4. 检查子网神经元总数是否已满
+        // 4. Check if subnet neuron count is full
         uint256 currentNeuronCount = neuronList[netuid].length;
         require(currentNeuronCount < params.maxAllowedUids, "SUBNET_NEURONS_FULL");
         
-        // 5. 如果选择注册为验证者，检查验证者数量限制
+        // 5. If registering as validator, check validator count limit
         if (isValidatorRole) {
             uint256 currentValidatorCount = getSubnetValidatorCount(netuid);
             require(currentValidatorCount < params.maxAllowedValidators, "SUBNET_VALIDATORS_FULL");
         }
         
-        // 6. 获取用户在该子网的有效质押
+        // 6. Get user's effective stake in the subnet
         uint256 userStake = globalStaking.getEffectiveStake(msg.sender, netuid);
         
-        // 7. 检查神经元门槛
+        // 7. Check neuron threshold
         require(userStake >= params.neuronThreshold, "INSUFFICIENT_NEURON_STAKE");
         
-        // 8. 如果选择注册为验证者，检查验证者门槛
+        // 8. If registering as validator, check validator threshold
         if (isValidatorRole) {
             require(userStake >= params.validatorThreshold, "INSUFFICIENT_VALIDATOR_STAKE");
         }
         
-        // 9. 检查子网质押要求
+        // 9. Check subnet stake requirements
         require(
             globalStaking.canBecomeNeuron(msg.sender, netuid, params.baseBurnCost),
             "INSUFFICIENT_SUBNET_STAKE"
         );
         
-        // 10. 锁定注册所需的质押
+        // 10. Lock required stake for registration
         globalStaking.lockSubnetStake(msg.sender, netuid, params.baseBurnCost);
         
-        // 11. 确定最终角色（基于用户选择和质押量）
+        // 11. Determine final role (based on user choice and stake amount)
         bool finalIsValidator = isValidatorRole && (userStake >= params.validatorThreshold);
         
-        // 12. 创建神经元信息
+        // 12. Create neuron info
         neurons[netuid][msg.sender] = SubnetTypes.NeuronInfo({
             account: msg.sender,
-            uid: 0, // 不使用 UID 系统
+            uid: 0, // UID system not used
             netuid: netuid,
             isActive: true,
             isValidator: finalIsValidator,
@@ -134,10 +134,10 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
             prometheusPort: prometheusPort
         });
         
-        // 13. 添加到神经元列表
+        // 13. Add to neuron list
         neuronList[netuid].push(msg.sender);
         
-        // 14. 发出事件供 native code 监听
+        // 14. Emit event for native code to monitor
         emit NeuronRegistered(
             netuid, 
             msg.sender, 
@@ -153,7 +153,7 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     }
     
     /**
-     * @dev 注销神经元
+     * @dev Deregister neuron
      */
     function deregisterNeuron(uint16 netuid) external nonReentrant {
         require(neurons[netuid][msg.sender].isActive, "NOT_REGISTERED");
@@ -161,21 +161,21 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
         // SubnetTypes.NeuronInfo storage neuron = neurons[netuid][msg.sender];
         SubnetTypes.SubnetHyperparams memory params = subnetManager.getSubnetParams(netuid);
         
-        // 解锁质押
+        // Unlock stake
         globalStaking.unlockSubnetStake(msg.sender, netuid, params.baseBurnCost);
         
-        // 清除神经元
+        // Clear neuron
         delete neurons[netuid][msg.sender];
         
-        // 从列表中移除
+        // Remove from list
         _removeFromNeuronList(netuid, msg.sender);
         
-        // 发出事件供 native code 监听
+        // Emit event for native code to monitor
         emit NeuronDeregistered(netuid, msg.sender, block.number);
     }
     
     /**
-     * @dev 更新质押分配（新增：检查门槛限制）
+     * @dev Update stake allocation (New: check threshold limits)
      */
     function updateStakeAllocation(
         uint16 netuid,
@@ -188,7 +188,7 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
         );
         require(neurons[netuid][account].isActive, "NEURON_NOT_ACTIVE");
         
-        // 新增：检查门槛限制
+        // New: check threshold limits
         SubnetTypes.SubnetHyperparams memory params = subnetManager.getSubnetParams(netuid);
         SubnetTypes.NeuronInfo storage neuron = neurons[netuid][account];
         
@@ -202,7 +202,7 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     }
     
     /**
-     * @dev 更新服务信息
+     * @dev Update service information
      */
     function updateService(
         uint16 netuid,
@@ -220,7 +220,7 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
         neuron.prometheusPort = prometheusPort;
         neuron.lastUpdate = block.timestamp;
         
-        // 发出事件供 native code 监听
+        // Emit event for native code to monitor
         emit ServiceUpdated(
             netuid, 
             msg.sender, 
@@ -233,7 +233,7 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     }
     
     /**
-     * @dev 分发奖励（由 native code 调用）
+     * @dev Distribute rewards (called by native code)
      */
     function distributeRewards(
         uint16 netuid,
@@ -243,24 +243,24 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
         require(accounts.length == amounts.length, "LENGTH_MISMATCH");
         require(subnetManager.subnetExists(netuid), "SUBNET_NOT_EXISTS");
         
-        // 获取子网的Alpha代币地址
+        // Get subnet's Alpha token address
         SubnetTypes.SubnetInfo memory subnetInfo = subnetManager.getSubnetInfo(netuid);
         IAlphaToken alphaToken = IAlphaToken(subnetInfo.alphaToken);
         
-        // 批量分发奖励 - mint Alpha代币给神经元
+        // Batch distribute rewards - mint Alpha tokens to neurons
         for (uint i = 0; i < accounts.length; i++) {
             if (neurons[netuid][accounts[i]].isActive && amounts[i] > 0) {
-                // 直接mint Alpha代币给神经元作为奖励
+                // Directly mint Alpha tokens to neurons as rewards
                 alphaToken.mint(accounts[i], amounts[i]);
             }
         }
         
-        // 发出事件记录奖励分发
+        // Emit event to record reward distribution
         emit RewardsDistributed(netuid, accounts, amounts, block.number);
     }
     
     /**
-     * @dev 批量更新神经元质押（优化gas消耗）
+     * @dev Batch update neuron stakes (optimize gas consumption)
      */
     function batchUpdateStakeAllocations(
         uint16 netuid,
@@ -277,10 +277,10 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
         }
     }
     
-    // ============ 查询函数 ============
+    // ============ Query Functions ============
     
     /**
-     * @dev 获取神经元信息
+     * @dev Get neuron information
      */
     function getNeuronInfo(uint16 netuid, address account) 
         external view returns (SubnetTypes.NeuronInfo memory) {
@@ -288,7 +288,7 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     }
     
     /**
-     * @dev 获取子网所有神经元地址
+     * @dev Get all neuron addresses in subnet
      */
     function getSubnetNeurons(uint16 netuid) 
         external view returns (address[] memory) {
@@ -296,28 +296,28 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     }
     
     /**
-     * @dev 检查是否为神经元
+     * @dev Check if address is a neuron
      */
     function isNeuron(uint16 netuid, address account) external view returns (bool) {
         return neurons[netuid][account].isActive;
     }
     
     /**
-     * @dev 检查是否为验证者
+     * @dev Check if address is a validator
      */
     function isValidator(uint16 netuid, address account) external view returns (bool) {
         return neurons[netuid][account].isActive && neurons[netuid][account].isValidator;
     }
     
     /**
-     * @dev 获取子网神经元数量
+     * @dev Get subnet neuron count
      */
     function getSubnetNeuronCount(uint16 netuid) external view returns (uint256) {
         return neuronList[netuid].length;
     }
     
     /**
-     * @dev 获取子网所有验证者
+     * @dev Get all validators in subnet
      */
     function getSubnetValidators(uint16 netuid) external view returns (address[] memory) {
         address[] memory neurons_list = neuronList[netuid];
@@ -331,7 +331,7 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
             }
         }
         
-        // 调整数组大小
+        // Resize array
         address[] memory result = new address[](validatorCount);
         for (uint i = 0; i < validatorCount; i++) {
             result[i] = validators[i];
@@ -341,7 +341,7 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     }
     
     /**
-     * @dev 检查用户是否可以注册为神经元
+     * @dev Check if user can register as neuron
      */
     function canRegisterNeuron(address user, uint16 netuid, bool isValidatorRole) external view returns (bool) {
         if (neurons[netuid][user].isActive) return false;
@@ -352,15 +352,15 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
         
         if (!subnetInfo.isActive) return false;
         
-        // 检查神经元总数限制
+        // Check neuron count limit
         uint256 currentNeuronCount = neuronList[netuid].length;
         if (currentNeuronCount >= params.maxAllowedUids) return false;
         
-        // 检查用户质押
+        // Check user stake
         uint256 userStake = globalStaking.getEffectiveStake(user, netuid);
         if (userStake < params.neuronThreshold) return false;
         
-        // 如果选择验证者角色，检查验证者数量限制和质押门槛
+        // If validator role, check validator count limit and stake threshold
         if (isValidatorRole) {
             uint256 currentValidatorCount = getSubnetValidatorCount(netuid);
             if (currentValidatorCount >= params.maxAllowedValidators) return false;
@@ -370,10 +370,10 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
         return globalStaking.canBecomeNeuron(user, netuid, params.baseBurnCost);
     }
     
-    // ============ 内部函数 ============
+    // ============ Internal Functions ============
     
     /**
-     * @dev 从神经元列表中移除地址
+     * @dev Remove address from neuron list
      */
     function _removeFromNeuronList(uint16 netuid, address account) internal {
         address[] storage list = neuronList[netuid];
@@ -387,7 +387,7 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     }
     
     /**
-     * @dev 更新单个神经元质押分配
+     * @dev Update single neuron stake allocation
      */
     function _updateSingleStakeAllocation(
         uint16 netuid,
@@ -397,18 +397,18 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
         SubnetTypes.NeuronInfo storage neuron = neurons[netuid][account];
         uint256 oldStake = neuron.stake;
         
-        // 更新神经元信息
+        // Update neuron info
         neuron.stake = newStake;
         neuron.lastUpdate = block.timestamp;
         
-        // 发出事件
+        // Emit event
         emit StakeAllocationChanged(
             netuid, 
             account, 
             oldStake, 
             newStake, 
             neuron.isValidator, 
-            neuron.isValidator, // 角色不变
+            neuron.isValidator, // Role remains unchanged
             block.number
         );
     }

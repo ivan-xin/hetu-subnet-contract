@@ -6,26 +6,26 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title WHETU
- * @dev Wrapped HETU Token - 将原生HETU代币包装成ERC20代币
- * 类似于WETH，1:1兑换比例
+ * @dev Wrapped HETU Token - Wraps native HETU token into an ERC20 token
+ * Similar to WETH, with 1:1 exchange ratio
  */
 contract WHETU is ERC20, ReentrancyGuard {
     
-    // 事件
+    // Events
     event Deposit(address indexed user, uint256 amount);
     event Withdrawal(address indexed user, uint256 amount);
     
     constructor() ERC20("Wrapped HETU", "WHETU") {}
     
     /**
-     * @dev 接收原生HETU并铸造等量WHETU
+     * @dev Receive native HETU and mint equivalent WHETU
      */
     receive() external payable {
         deposit();
     }
     
     /**
-     * @dev 存入原生HETU，铸造等量WHETU
+     * @dev Deposit native HETU, mint equivalent WHETU
      */
     function deposit() public payable nonReentrant {
         require(msg.value > 0, "WHETU: ZERO_DEPOSIT");
@@ -35,8 +35,8 @@ contract WHETU is ERC20, ReentrancyGuard {
     }
     
     /**
-     * @dev 销毁WHETU，提取等量原生HETU
-     * @param amount 要提取的数量
+     * @dev Burn WHETU, withdraw equivalent native HETU
+     * @param amount Amount to withdraw
      */
     function withdraw(uint256 amount) public nonReentrant {
         require(amount > 0, "WHETU: ZERO_WITHDRAWAL");
@@ -51,7 +51,7 @@ contract WHETU is ERC20, ReentrancyGuard {
     }
     
     /**
-     * @dev 获取合约中的原生HETU余额
+     * @dev Get native HETU balance in contract
      */
     function totalETH() external view returns (uint256) {
         return address(this).balance;

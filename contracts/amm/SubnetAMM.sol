@@ -8,55 +8,55 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 /**
  * @title SubnetAMM
- * @dev 基于Subtensor机制的HETU和Alpha代币自动做市商合约
- * 流动性只能由系统注入，创建者/所有者无法操作池子
+ * @dev Automated Market Maker contract for HETU and Alpha tokens based on Subtensor mechanism
+ * Liquidity can only be injected by the system, creator/owner cannot operate the pool
  */
 contract SubnetAMM is ReentrancyGuard {
     using Math for uint256;
     
-    // 机制类型枚举
+    // Mechanism type enumeration
     enum MechanismType { 
-        Stable,   // 0: 稳定机制，1:1兑换
-        Dynamic   // 1: 动态机制，AMM兑换
+        Stable,   // 0: Stable mechanism, 1:1 exchange
+        Dynamic   // 1: Dynamic mechanism, AMM exchange
     }
     
-    // 代币合约
+    // Token contracts
     IERC20 public immutable hetuToken;
     IERC20 public immutable alphaToken;
     uint16 public immutable netuid;
     
-    // 机制设置（部署时确定，不可更改）
+    // Mechanism settings (determined at deployment, cannot be changed)
     MechanismType public immutable mechanism;
     
-    // 储备量 (对应Subtensor的存储结构)
-    uint256 public subnetTAO;        // 对应SubnetTAO - 池中HETU储备
-    uint256 public subnetAlphaIn;    // 对应SubnetAlphaIn - 池中Alpha储备
-    uint256 public subnetAlphaOut;   // 对应SubnetAlphaOut - 流通中的Alpha
+    // Reserves (corresponding to Subtensor storage structure)
+    uint256 public subnetTAO;        // Corresponds to SubnetTAO - HETU reserve in pool
+    uint256 public subnetAlphaIn;    // Corresponds to SubnetAlphaIn - Alpha reserve in pool
+    uint256 public subnetAlphaOut;   // Corresponds to SubnetAlphaOut - Alpha in circulation
     
-    // 流动性保护（部署时设定，不可更改）
+    // Liquidity protection (set at deployment, cannot be changed)
     uint256 public immutable minimumPoolLiquidity;
     
-    // 价格追踪
-    uint256 public currentAlphaPrice;     // 当前Alpha价格 (HETU/Alpha)
-    uint256 public movingAlphaPrice;      // 移动平均价格
-    uint256 public priceUpdateBlock;      // 价格更新区块
+    // Price tracking
+    uint256 public currentAlphaPrice;     // Current Alpha price (HETU/Alpha)
+    uint256 public movingAlphaPrice;      // Moving average price
+    uint256 public priceUpdateBlock;      // Price update block
     
-    // 移动平均参数（常量）
-    uint256 public constant HALVING_TIME = 1000;  // 半衰期(区块数)
+    // Moving average parameters (constants)
+    uint256 public constant HALVING_TIME = 1000;  // Half-life period (blocks)
     
-    // 统计数据
-    uint256 public totalVolume;           // 总交易量
-    mapping(address => uint256) public userVolume;  // 用户交易量
+    // Statistics
+    uint256 public totalVolume;           // Total trading volume
+    mapping(address => uint256) public userVolume;  // User trading volume
     
-    // 系统地址（部署时设定，不可更改）
+    // System addresses (set at deployment, cannot be changed)
     address public immutable systemAddress;
     address public immutable subnetContract;
     
-    // 创建者地址（仅用于记录，无特殊权限）
+    // Creator address (for recording only, no special privileges)
     address public immutable creator;
     uint256 public immutable createdAt;
     
-    // 事件
+    // Events
     event SwapHETUForAlpha(
         address indexed user,
         uint256 hetuAmountIn,
@@ -114,15 +114,15 @@ contract SubnetAMM is ReentrancyGuard {
         mechanism = _mechanism;
         minimumPoolLiquidity = _minimumPoolLiquidity;
         
-        // 记录创建者信息（仅用于记录）
+        // Record creator information (for recording only)
         creator = msg.sender;
         createdAt = block.timestamp;
         priceUpdateBlock = block.number;
     }
     
     /**
-     * @dev 系统注入流动性
-     * 只有系统地址可以调用，创建者无权限
+     * @dev System injects liquidity
+     * Only system address can call, creator has no permission
      */
     function injectLiquidity(
         uint256 hetuAmount,
@@ -146,8 +146,8 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev 系统提取流动性
-     * 只有系统地址可以调用，创建者无权限
+     * @dev System withdraws liquidity
+     * Only system address can call, creator has no permission
      */
     function withdrawLiquidity(
         uint256 hetuAmount,
@@ -179,8 +179,8 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev HETU换Alpha
-     * 任何用户都可以调用，包括创建者（但创建者没有特殊权限）
+     * @dev Swap HETU for Alpha
+     * Any user can call, including creator (but creator has no special privileges)
      */
     function swapHETUForAlpha(
         uint256 hetuAmountIn,
@@ -190,21 +190,21 @@ contract SubnetAMM is ReentrancyGuard {
         require(hetuAmountIn > 0, "AMM: INSUFFICIENT_INPUT_AMOUNT");
         require(to != address(0), "AMM: ZERO_ADDRESS");
         
-        // 模拟兑换检查
+        // Simulate swap check
         alphaAmountOut = simSwapHETUForAlpha(hetuAmountIn);
         require(alphaAmountOut > 0, "AMM: INSUFFICIENT_LIQUIDITY");
         require(alphaAmountOut >= alphaAmountOutMin, "AMM: INSUFFICIENT_OUTPUT_AMOUNT");
         
-        // 执行兑换
+        // Execute swap
         hetuToken.transferFrom(msg.sender, address(this), hetuAmountIn);
         alphaToken.transfer(to, alphaAmountOut);
         
-        // 更新储备量
+        // Update reserves
         subnetTAO += hetuAmountIn;
         subnetAlphaIn -= alphaAmountOut;
         subnetAlphaOut += alphaAmountOut;
         
-        // 更新统计
+        // Update statistics
         totalVolume += hetuAmountIn;
         userVolume[msg.sender] += hetuAmountIn;
         
@@ -215,8 +215,8 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev Alpha换HETU
-     * 任何用户都可以调用，包括创建者（但创建者没有特殊权限）
+     * @dev Swap Alpha for HETU
+     * Any user can call, including creator (but creator has no special privileges)
      */
     function swapAlphaForHETU(
         uint256 alphaAmountIn,
@@ -226,21 +226,21 @@ contract SubnetAMM is ReentrancyGuard {
         require(alphaAmountIn > 0, "AMM: INSUFFICIENT_INPUT_AMOUNT");
         require(to != address(0), "AMM: ZERO_ADDRESS");
         
-        // 模拟兑换检查
+        // Simulate swap check
         hetuAmountOut = simSwapAlphaForHETU(alphaAmountIn);
         require(hetuAmountOut > 0, "AMM: INSUFFICIENT_LIQUIDITY");
         require(hetuAmountOut >= hetuAmountOutMin, "AMM: INSUFFICIENT_OUTPUT_AMOUNT");
         
-        // 执行兑换
+        // Execute swap
         alphaToken.transferFrom(msg.sender, address(this), alphaAmountIn);
         hetuToken.transfer(to, hetuAmountOut);
         
-        // 更新储备量
+        // Update reserves
         subnetAlphaIn += alphaAmountIn;
         subnetAlphaOut -= alphaAmountIn;
         subnetTAO -= hetuAmountOut;
         
-        // 更新统计
+        // Update statistics
         uint256 hetuValue = _convertToHETUValue(alphaAmountIn);
         totalVolume += hetuValue;
         userVolume[msg.sender] += hetuValue;
@@ -252,24 +252,24 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev 模拟HETU换Alpha
+     * @dev Simulate HETU to Alpha swap
      */
     function simSwapHETUForAlpha(uint256 hetuAmount) public view returns (uint256 alphaAmount) {
         if (mechanism == MechanismType.Stable) {
-            // 稳定机制：1:1兑换
+            // Stable mechanism: 1:1 exchange
             alphaAmount = hetuAmount;
         } else {
-            // 动态机制：AMM计算
+            // Dynamic mechanism: AMM calculation
             if (subnetTAO == 0 || subnetAlphaIn == 0) {
                 return 0;
             }
             
-            // 恒定乘积公式: k = subnetTAO * subnetAlphaIn
+            // Constant product formula: k = subnetTAO * subnetAlphaIn
             uint256 k = subnetTAO * subnetAlphaIn;
             uint256 newSubnetTAO = subnetTAO + hetuAmount;
             uint256 newSubnetAlphaIn = k / newSubnetTAO;
             
-            // 检查流动性保护
+            // Check liquidity protection
             if (newSubnetAlphaIn < minimumPoolLiquidity) {
                 return 0;
             }
@@ -277,31 +277,31 @@ contract SubnetAMM is ReentrancyGuard {
             alphaAmount = subnetAlphaIn - newSubnetAlphaIn;
         }
         
-        // 最终检查
+        // Final check
         if (alphaAmount > subnetAlphaIn || subnetAlphaIn - alphaAmount < minimumPoolLiquidity) {
             return 0;
         }
     }
     
     /**
-     * @dev 模拟Alpha换HETU
+     * @dev Simulate Alpha to HETU swap
      */
     function simSwapAlphaForHETU(uint256 alphaAmount) public view returns (uint256 hetuAmount) {
         if (mechanism == MechanismType.Stable) {
-            // 稳定机制：1:1兑换
+            // Stable mechanism: 1:1 exchange
             hetuAmount = alphaAmount;
         } else {
-            // 动态机制：AMM计算
+            // Dynamic mechanism: AMM calculation
             if (subnetTAO == 0 || subnetAlphaIn == 0) {
                 return 0;
             }
             
-            // 恒定乘积公式: k = subnetTAO * subnetAlphaIn
+            // Constant product formula: k = subnetTAO * subnetAlphaIn
             uint256 k = subnetTAO * subnetAlphaIn;
             uint256 newSubnetAlphaIn = subnetAlphaIn + alphaAmount;
             uint256 newSubnetTAO = k / newSubnetAlphaIn;
             
-            // 检查流动性保护
+            // Check liquidity protection
             if (newSubnetTAO < minimumPoolLiquidity) {
                 return 0;
             }
@@ -309,14 +309,14 @@ contract SubnetAMM is ReentrancyGuard {
             hetuAmount = subnetTAO - newSubnetTAO;
         }
         
-        // 最终检查
+        // Final check
         if (hetuAmount > subnetTAO || subnetTAO - hetuAmount < minimumPoolLiquidity) {
             return 0;
         }
     }
     
     /**
-     * @dev 获取当前Alpha价格
+     * @dev Get current Alpha price
      */
     function getAlphaPrice() public view returns (uint256 price) {
         if (subnetAlphaIn == 0) {
@@ -326,42 +326,42 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev 获取移动平均价格
+     * @dev Get moving average price
      */
     function getMovingAlphaPrice() public view returns (uint256) {
         return movingAlphaPrice;
     }
     
     /**
-     * @dev 更新移动平均价格
-     * 任何人都可以调用，用于更新价格
+     * @dev Update moving average price
+     * Anyone can call to update the price
      */
     function updateMovingPrice() external {
         _updatePrice();
     }
     
     /**
-     * @dev 内部价格更新函数
+     * @dev Internal price update function
      */
     function _updatePrice() internal {
         uint256 blocksSinceUpdate = block.number - priceUpdateBlock;
         if (blocksSinceUpdate == 0) return;
         
-        // 计算当前价格
+        // Calculate current price
         currentAlphaPrice = getAlphaPrice();
         
         if (movingAlphaPrice == 0) {
-            // 首次设置
+            // First time setup
             movingAlphaPrice = currentAlphaPrice;
         } else {
-            // 计算指数移动平均
+            // Calculate exponential moving average
             uint256 alpha = (blocksSinceUpdate * 1e18) / (blocksSinceUpdate + HALVING_TIME);
             uint256 oneMinusAlpha = 1e18 - alpha;
             
-            // 限制当前价格最大为1.0
+            // Cap current price at 1.0
             uint256 cappedCurrentPrice = currentAlphaPrice > 1e18 ? 1e18 : currentAlphaPrice;
             
-            // 更新移动平均价格
+            // Update moving average price
             movingAlphaPrice = (alpha * cappedCurrentPrice + oneMinusAlpha * movingAlphaPrice) / 1e18;
         }
         
@@ -370,7 +370,7 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev 将Alpha金额转换为HETU价值
+     * @dev Convert Alpha amount to HETU value
      */
     function _convertToHETUValue(uint256 alphaAmount) internal view returns (uint256) {
         if (currentAlphaPrice == 0) return alphaAmount;
@@ -378,7 +378,7 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev 获取池子详细信息
+     * @dev Get pool detailed information
      */
     function getPoolInfo() external view returns (
         MechanismType _mechanism,
@@ -403,7 +403,7 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev 获取创建者信息（仅用于记录）
+     * @dev Get creator information (for record only)
      */
     function getCreatorInfo() external view returns (
         address _creator,
@@ -414,7 +414,7 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev 获取系统地址信息
+     * @dev Get system address information
      */
     function getSystemInfo() external view returns (
         address _systemAddress,
@@ -424,7 +424,7 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev 获取兑换预览
+     * @dev Get swap preview
      */
     function getSwapPreview(
         uint256 amountIn,
@@ -440,7 +440,7 @@ contract SubnetAMM is ReentrancyGuard {
             isLiquiditySufficient = amountOut > 0;
             
             if (mechanism == MechanismType.Dynamic && subnetAlphaIn > 0) {
-                // 计算价格影响
+                // Calculate price impact
                 uint256 oldPrice = getAlphaPrice();
                 uint256 newSubnetTAO = subnetTAO + amountIn;
                 uint256 newSubnetAlphaIn = subnetAlphaIn - amountOut;
@@ -459,7 +459,7 @@ contract SubnetAMM is ReentrancyGuard {
             isLiquiditySufficient = amountOut > 0;
             
             if (mechanism == MechanismType.Dynamic && subnetAlphaIn > 0) {
-                // 计算价格影响
+                // Calculate price impact
                 uint256 oldPrice = getAlphaPrice();
                 uint256 newSubnetTAO = subnetTAO - amountOut;
                 uint256 newSubnetAlphaIn = subnetAlphaIn + amountIn;
@@ -477,7 +477,7 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev 检查大额交易警告
+     * @dev Check large trade warning
      */
     function checkLargeTradeWarning(
         uint256 amountIn,
@@ -493,7 +493,7 @@ contract SubnetAMM is ReentrancyGuard {
             return (true, 0, "No liquidity available");
         }
         
-        // 计算交易占池子的百分比
+        // Calculate trade percentage of pool
         percentageOfPool = (amountIn * 10000) / reserveIn;
         
         if (percentageOfPool >= 2000) { // 20%
@@ -512,14 +512,14 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev 获取恒定乘积K值
+     * @dev Get constant product K value
      */
     function getK() external view returns (uint256) {
         return subnetTAO * subnetAlphaIn;
     }
     
     /**
-     * @dev 检查池子健康状态
+     * @dev Check pool health status
      */
     function getPoolHealth() external view returns (
         bool isHealthy,
@@ -539,12 +539,12 @@ contract SubnetAMM is ReentrancyGuard {
             return (false, "Low liquidity", liquidityRatio);
         }
         
-        liquidityRatio = 100; // 健康状态
+        liquidityRatio = 100; // Healthy status
         return (true, "Healthy", liquidityRatio);
     }
     
     /**
-     * @dev 获取历史统计数据
+     * @dev Get historical statistics
      */
     function getStatistics() external view returns (
         uint256 _totalVolume,
@@ -563,7 +563,7 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev 获取用户交易统计
+     * @dev Get user trading statistics
      */
     function getUserStats(address user) external view returns (
         uint256 _userVolume,
@@ -574,21 +574,21 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev 检查地址是否为系统地址
+     * @dev Check if address is system address
      */
     function isSystemAddress(address addr) external view returns (bool) {
         return addr == systemAddress || addr == subnetContract;
     }
     
     /**
-     * @dev 检查地址是否为创建者（仅用于查询，无特殊权限）
+     * @dev Check if address is creator (for query only, no special privileges)
      */
     function isCreator(address addr) external view returns (bool) {
         return addr == creator;
     }
     
     /**
-     * @dev 获取代币余额
+     * @dev Get token balances
      */
     function getTokenBalances() external view returns (
         uint256 hetuBalance,
@@ -599,7 +599,7 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev 验证储备量一致性
+     * @dev Verify reserve consistency
      */
     function verifyReserves() external view returns (
         bool isConsistent,
@@ -620,7 +620,7 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev 计算理论价格（不考虑滑点）
+     * @dev Calculate theoretical price (without slippage)
      */
     function getTheoreticalPrice() external view returns (uint256) {
         if (subnetAlphaIn == 0) return 0;
@@ -628,14 +628,14 @@ contract SubnetAMM is ReentrancyGuard {
     }
     
     /**
-     * @dev 计算滑点
+     * @dev Calculate slippage
      */
     function calculateSlippage(
         uint256 amountIn,
         bool isHETUToAlpha
     ) external view returns (uint256 slippageRate) {
         if (mechanism == MechanismType.Stable) {
-            return 0; // 稳定机制无滑点
+            return 0; // No slippage for stable mechanism
         }
         
         uint256 theoreticalOut;
@@ -654,4 +654,3 @@ contract SubnetAMM is ReentrancyGuard {
         }
     }
 }
-

@@ -5,49 +5,49 @@ import "../interfaces/ISubnetTypes.sol";
 
 /**
  * @title DefaultHyperparams
- * @dev 默认超参数库，提供子网的默认配置和验证功能
+ * @dev Default hyperparameter library, providing default configuration and validation functions for subnets
  */
 library DefaultHyperparams {
     
     /**
-     * @dev 返回新子网的默认超参数
+     * @dev Returns default hyperparameters for a new subnet
      */
     function getDefaultHyperparams() internal pure returns (SubnetTypes.SubnetHyperparams memory) {
         return SubnetTypes.SubnetHyperparams({
-            // 核心网络参数
-            rho: 10,                           // 共识参数
-            kappa: 32767,                      // 激励参数 (uint16最大值的一半)
-            immunityPeriod: 7200,              // 免疫期 (约1天，假设12秒一个区块)
-            tempo: 99,                         // 网络节拍 (区块)
-            maxValidators: 64,                 // 最大验证者数量
-            activityCutoff: 5000,              // 活跃度阈值
-            maxAllowedUids: 4096,              // 最大允许的神经元数量
-            maxAllowedValidators: 128,         // 最大允许的验证者数量
-            minAllowedWeights: 8,              // 验证者必须设置的最小非零权重数
-            maxWeightsLimit: 1000,             // 最大权重限制
+            // Core Network Parameters
+            rho: 10,                           // Consensus parameter
+            kappa: 32767,                      // Incentive parameter (half of uint16 max value)
+            immunityPeriod: 7200,              // Immunity period (about 1 day, assuming 12s per block)
+            tempo: 99,                         // Network tempo (blocks)
+            maxValidators: 64,                 // Maximum number of validators
+            activityCutoff: 5000,              // Activity threshold
+            maxAllowedUids: 4096,              // Maximum allowed number of neurons
+            maxAllowedValidators: 128,         // Maximum allowed number of validators
+            minAllowedWeights: 8,              // Minimum number of non-zero weights required for validators
+            maxWeightsLimit: 1000,             // Maximum weight limit
             
-            // 经济参数
-            baseBurnCost: 1 * 1e18,            // 注册神经元的基本燃烧成本 (1 HETU)
-            currentDifficulty: 10000000,       // 当前挖矿难度
-            targetRegsPerInterval: 2,          // 目标注册频率 (每个间隔期望注册数)
-            maxRegsPerBlock: 1,                // 每区块最大注册数
-            weightsRateLimit: 15000,             // 权重设置频率限制 (区块数)
+            // Economic Parameters
+            baseBurnCost: 1 * 1e18,            // Base burn cost for registering neurons (1 HETU)
+            currentDifficulty: 10000000,       // Current mining difficulty
+            targetRegsPerInterval: 2,          // Target registration rate (expected registrations per interval)
+            maxRegsPerBlock: 1,                // Maximum registrations per block
+            weightsRateLimit: 15000,             // Weight setting rate limit (in blocks)
             
-            // 治理参数
-            registrationAllowed: true,         // 是否允许新神经元注册
-            commitRevealEnabled: false,        // 提交-揭示机制 (初始关闭)
-            commitRevealPeriod: 1000,          // 提交-揭示周期 (区块数)
-            servingRateLimit: 50,              // 服务频率限制 (区块数)
-            validatorThreshold: 1000,          // 成为验证者的最小质押门槛
-            neuronThreshold: 100               // 成为神经元的最小质押门槛
+            // Governance Parameters
+            registrationAllowed: true,         // Whether new neuron registration is allowed
+            commitRevealEnabled: false,        // Commit-reveal mechanism (initially disabled)
+            commitRevealPeriod: 1000,          // Commit-reveal period (in blocks)
+            servingRateLimit: 50,              // Service rate limit (in blocks)
+            validatorThreshold: 1000,          // Minimum stake threshold for becoming a validator
+            neuronThreshold: 100               // Minimum stake threshold for becoming a neuron
         });
     }
     
     /**
-     * @dev 验证超参数是否在可接受的范围内
+     * @dev Validates if hyperparameters are within acceptable ranges
      */
     function validateHyperparams(SubnetTypes.SubnetHyperparams memory params) internal pure returns (bool) {
-        // 验证核心参数
+        // Validate core parameters
         if (params.rho == 0 || params.rho > 1000) return false;
         if (params.kappa == 0) return false;
         if (params.immunityPeriod == 0 || params.immunityPeriod > 100000) return false;
@@ -59,17 +59,17 @@ library DefaultHyperparams {
         if (params.minAllowedWeights == 0 || params.minAllowedWeights > params.maxWeightsLimit) return false;
         if (params.maxWeightsLimit == 0 || params.maxWeightsLimit > 10000) return false;
         
-        // 关键约束：weightsRateLimit 必须大于 immunityPeriod
+        // Critical constraint: weightsRateLimit must be greater than immunityPeriod
         if (params.weightsRateLimit <= params.immunityPeriod) return false;
 
-        // 验证经济参数
+        // Validate economic parameters
         if (params.baseBurnCost == 0) return false;
         if (params.currentDifficulty == 0) return false;
         if (params.targetRegsPerInterval == 0 || params.targetRegsPerInterval > 100) return false;
         if (params.maxRegsPerBlock == 0 || params.maxRegsPerBlock > 10) return false;
         if (params.weightsRateLimit == 0 || params.weightsRateLimit > 10000) return false;
         
-        // 验证治理参数
+        // Validate governance parameters
         if (params.commitRevealPeriod == 0 || params.commitRevealPeriod > 10000) return false;
         if (params.servingRateLimit == 0 || params.servingRateLimit > 1000) return false;
         if (params.validatorThreshold < params.neuronThreshold) return false;
@@ -79,52 +79,52 @@ library DefaultHyperparams {
     }
     
     /**
-     * @dev 获取测试网络的超参数 (更宽松的设置)
+     * @dev Get hyperparameters for test network (more relaxed settings)
      */
     function getTestnetHyperparams() internal pure returns (SubnetTypes.SubnetHyperparams memory) {
         SubnetTypes.SubnetHyperparams memory testParams = getDefaultHyperparams();
         
-        // 测试网络的调整
-        testParams.baseBurnCost = 0.1 * 1e18;      // 降低燃烧成本
-        testParams.validatorThreshold = 10;        // 降低验证者门槛
-        testParams.neuronThreshold = 1;            // 降低神经元门槛
-        testParams.immunityPeriod = 100;           // 缩短免疫期
-        testParams.maxValidators = 16;             // 减少最大验证者数
-        testParams.tempo = 50;                     // 加快网络节拍
+        // Testnet adjustments
+        testParams.baseBurnCost = 0.1 * 1e18;      // Lower burn cost
+        testParams.validatorThreshold = 10;        // Lower validator threshold
+        testParams.neuronThreshold = 1;            // Lower neuron threshold
+        testParams.immunityPeriod = 100;           // Shorter immunity period
+        testParams.maxValidators = 16;             // Fewer maximum validators
+        testParams.tempo = 50;                     // Faster network tempo
         
         return testParams;
     }
     
     /**
-     * @dev 获取高性能网络的超参数
+     * @dev Get hyperparameters for high-performance network
      */
     function getHighPerformanceHyperparams() internal pure returns (SubnetTypes.SubnetHyperparams memory) {
         SubnetTypes.SubnetHyperparams memory perfParams = getDefaultHyperparams();
         
-        // 高性能网络的调整
-        perfParams.maxValidators = 128;            // 增加验证者数量
-        perfParams.maxAllowedUids = 8192;          // 增加神经元数量
-        perfParams.validatorThreshold = 5000;     // 提高验证者门槛
-        perfParams.neuronThreshold = 500;         // 提高神经元门槛
-        perfParams.tempo = 200;                   // 放慢网络节拍以提高稳定性
-        perfParams.weightsRateLimit = 200;        // 增加权重设置间隔
+        // High-performance network adjustments
+        perfParams.maxValidators = 128;            // Increase validator count
+        perfParams.maxAllowedUids = 8192;          // Increase neuron count
+        perfParams.validatorThreshold = 5000;     // Higher validator threshold
+        perfParams.neuronThreshold = 500;         // Higher neuron threshold
+        perfParams.tempo = 200;                   // Slower network tempo for better stability
+        perfParams.weightsRateLimit = 200;        // Increase weight setting interval
         
         return perfParams;
     }
     
     /**
-     * @dev 合并自定义参数与默认参数
-     * @param customParams 自定义参数
-     * @param useCustomFlags 标记数组，指示哪些参数使用自定义值
+     * @dev Merge custom parameters with default parameters
+     * @param customParams Custom parameters
+     * @param useCustomFlags Flag array indicating which parameters to use custom values
      */
     function mergeWithDefaults(
         SubnetTypes.SubnetHyperparams memory customParams,
-        bool[21] memory useCustomFlags  // 对应21个参数的标记数组
+        bool[21] memory useCustomFlags  // Flag array corresponding to 21 parameters
     ) internal pure returns (SubnetTypes.SubnetHyperparams memory) {
         SubnetTypes.SubnetHyperparams memory defaults = getDefaultHyperparams();
         SubnetTypes.SubnetHyperparams memory merged = defaults;
         
-        // 根据标记数组选择性合并参数
+        // Selectively merge parameters based on flag array
         if (useCustomFlags[0]) merged.rho = customParams.rho;
         if (useCustomFlags[1]) merged.kappa = customParams.kappa;
         if (useCustomFlags[2]) merged.immunityPeriod = customParams.immunityPeriod;
@@ -151,7 +151,7 @@ library DefaultHyperparams {
     }
     
     /**
-     * @dev 检查两个超参数配置是否相等
+     * @dev Check if two hyperparameter configurations are equal
      */
     function isEqual(
         SubnetTypes.SubnetHyperparams memory a,

@@ -3,12 +3,12 @@ const { ethers } = require("hardhat");
 async function main() {
   const [deployer] = await ethers.getSigners();
   
-  console.log("使用 Hardhat Ignition 部署合约...");
-  console.log("部署者地址:", deployer.address);
-  console.log("网络:", network.name);
+  console.log("Deploying contracts using Hardhat Ignition...");
+  console.log("Deployer address:", deployer.address);
+  console.log("Network:", network.name);
 
   try {
-    // 使用 Ignition 部署
+    // Deploy using Ignition
     const { hetuToken, ammFactory, globalStaking, subnetManager, neuronManager } = 
       await ignition.deploy("HetuSubnetModule", {
         parameters: {
@@ -19,14 +19,14 @@ async function main() {
         }
       });
 
-    console.log("\n=== 部署完成 ===");
+    console.log("\n=== Deployment Complete ===");
     console.log("HETU Token:", hetuToken.address);
     console.log("AMM Factory:", ammFactory.address);
     console.log("GlobalStaking:", globalStaking.address);
     console.log("SubnetManager:", subnetManager.address);
     console.log("NeuronManager:", neuronManager.address);
 
-    // 保存部署地址
+    // Save deployment addresses
     const deploymentInfo = {
       network: network.name,
       timestamp: new Date().toISOString(),
@@ -46,10 +46,10 @@ async function main() {
     fs.mkdirSync(path.dirname(deploymentPath), { recursive: true });
     fs.writeFileSync(deploymentPath, JSON.stringify(deploymentInfo, null, 2));
     
-    console.log(`\n部署信息已保存到: ${deploymentPath}`);
+    console.log(`\nDeployment info saved to: ${deploymentPath}`);
 
   } catch (error) {
-    console.error("部署失败:", error);
+    console.error("Deployment failed:", error);
     throw error;
   }
 }

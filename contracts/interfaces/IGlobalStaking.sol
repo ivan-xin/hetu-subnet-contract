@@ -6,21 +6,21 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IGlobalStaking {
     struct StakeInfo {
-        uint256 totalStaked;           // 总质押量
-        uint256 totalAllocated;        // 总分配量
-        uint256 availableForAllocation; // 可用质押量
-        uint256 lastUpdateBlock;       // 最后更新区块
-        uint256 pendingRewards;        // 待领取奖励
+        uint256 totalStaked;           // Total staked amount
+        uint256 totalAllocated;        // Total allocated amount
+        uint256 availableForAllocation; // Available stake amount
+        uint256 lastUpdateBlock;       // Last update block
+        uint256 pendingRewards;        // Pending rewards
     }
     
     struct SubnetAllocation {
-        uint256 allocated;             // 分配到子网的量
-        uint256 locked;                // 锁定量（注册时锁定）
-        uint256 lastUpdateBlock;       // 最后更新区块
-        bool isActive;                 // 是否活跃
+        uint256 allocated;             // Amount allocated to subnet
+        uint256 locked;                // Locked amount (locked during registration)
+        uint256 lastUpdateBlock;       // Last update block
+        bool isActive;                 // Is active
     }
     
-    // 事件
+    // Events
     event GlobalStakeAdded(address indexed user, uint256 amount);
     event GlobalStakeRemoved(address indexed user, uint256 amount);
     event SubnetAllocationChanged(
