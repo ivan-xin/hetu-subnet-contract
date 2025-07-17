@@ -3,19 +3,20 @@ pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
 /**
  * @title WHETU
  * @dev Wrapped HETU Token - Wraps native HETU token into an ERC20 token
  * Similar to WETH, with 1:1 exchange ratio
  */
-contract WHETU is ERC20, ReentrancyGuard {
+contract WHETU is ERC20Permit, ReentrancyGuard {
     
     // Events
     event Deposit(address indexed user, uint256 amount);
     event Withdrawal(address indexed user, uint256 amount);
     
-    constructor() ERC20("Wrapped HETU", "WHETU") {}
+    constructor() ERC20("Wrapped HETU", "WHETU") ERC20Permit("Wrapped HETU") {}
     
     /**
      * @dev Receive native HETU and mint equivalent WHETU

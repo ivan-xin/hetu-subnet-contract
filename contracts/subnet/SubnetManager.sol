@@ -5,6 +5,7 @@ pragma solidity ^0.8.19;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 import "../tokens/AlphaToken.sol";
 import "../amm/SubnetAMM.sol";
 import "../factory/SubnetAMMFactory.sol";
@@ -95,7 +96,84 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
         );
     }
     
+/**
+ * @dev Register new subnet with permit authorization in single transaction
+ */
+function registerNetworkWithPermit(
+    string calldata name,
+    string calldata description,
+    string calldata tokenName,
+    string calldata tokenSymbol,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+) external nonReentrant returns (uint16 netuid) {
+    uint256 lockAmount = getNetworkLockCost();
+    
+    // Use permit for authorization
+    IERC20Permit(address(hetuToken)).permit(
+        msg.sender,
+        address(this),
+        lockAmount,
+        deadline,
+        v, r, s
+    );
+    
+    // Execute normal registration flow
+    SubnetTypes.SubnetHyperparams memory defaultParams = DefaultHyperparams.getDefaultHyperparams();
+    return _registerNetworkWithHyperparams(
+        name,
+        description,
+        tokenName,
+        tokenSymbol,
+        defaultParams
+    );
+}
 
+    /**
+     * @dev Register subnet with partial custom hyperparameters and permit authorization
+     */
+    function registerNetworkWithPartialCustomAndPermit(
+        string calldata name,
+        string calldata description,
+        string calldata tokenName,
+        string calldata tokenSymbol,
+        SubnetTypes.SubnetHyperparams calldata customHyperparams,
+        bool[21] calldata useCustomFlags,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external nonReentrant returns (uint16 netuid) {
+        uint256 lockAmount = getNetworkLockCost();
+        
+        // Use permit for authorization
+        IERC20Permit(address(hetuToken)).permit(
+            msg.sender,
+            address(this),
+            lockAmount,
+            deadline,
+            v, r, s
+        );
+        
+        // Merge custom parameters with defaults
+        SubnetTypes.SubnetHyperparams memory mergedParams = DefaultHyperparams.mergeWithDefaults(
+            customHyperparams,
+            useCustomFlags
+        );
+        
+        // Validate merged hyperparameters
+        require(DefaultHyperparams.validateHyperparams(mergedParams), "INVALID_MERGED_HYPERPARAMS");
+        
+        return _registerNetworkWithHyperparams(
+            name,
+            description,
+            tokenName,
+            tokenSymbol,
+            mergedParams
+        );
+    }
     /**
      * @dev Internal network registration function
      */
