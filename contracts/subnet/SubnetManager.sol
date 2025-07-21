@@ -445,4 +445,75 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
         }
         return candidateNetuid;
     }
+
+    // Add the following functions in SubnetManager contract
+
+    /**
+     * @dev Update network parameters (owner only, for testing phase)
+     * @param _networkMinLock New minimum lock amount
+     * @param _networkRateLimit New rate limit
+     * @param _lockReductionInterval New lock reduction interval
+     */
+    function updateNetworkParams(
+        uint256 _networkMinLock,
+        uint256 _networkRateLimit,
+        uint256 _lockReductionInterval
+    ) external onlyOwner {
+        require(_networkMinLock > 0, "MIN_LOCK_ZERO");
+        require(_networkRateLimit > 0, "RATE_LIMIT_ZERO");
+        require(_lockReductionInterval > 0, "REDUCTION_INTERVAL_ZERO");
+        
+        networkMinLock = _networkMinLock;
+        networkRateLimit = _networkRateLimit;
+        lockReductionInterval = _lockReductionInterval;
+    }
+
+    /**
+     * @dev Reset network lock state (owner only, for testing phase)
+     */
+    function resetNetworkLockState() external onlyOwner {
+        networkLastLock = 0;
+        networkLastLockBlock = block.number;
+    }
+
+    /**
+     * @dev Get current network parameters
+     */
+    function getNetworkParams() external view returns (
+        uint256 minLock,
+        uint256 lastLock,
+        uint256 lastLockBlock,
+        uint256 rateLimit,
+        uint256 reductionInterval,
+        uint16 totalNets,
+        uint16 nextId
+    ) {
+        return (
+            networkMinLock,
+            networkLastLock,
+            networkLastLockBlock,
+            networkRateLimit,
+            lockReductionInterval,
+            totalNetworks,
+            nextNetuid
+        );
+    }
+
+    /**
+     * @dev Update subnet hyperparameters (owner only, for testing purposes)
+     * @param netuid Subnet ID
+     * @param newHyperparams New hyperparameters
+     */
+    function updateSubnetHyperparams(
+        uint16 netuid,
+        SubnetTypes.SubnetHyperparams calldata newHyperparams
+    ) external onlyOwner {
+        require(subnetExists[netuid], "SUBNET_NOT_EXISTS");
+        require(DefaultHyperparams.validateHyperparams(newHyperparams), "INVALID_HYPERPARAMS");
+        
+        // Update hyperparameters
+        subnetHyperparams[netuid] = newHyperparams;
+        
+    }
+
 }
