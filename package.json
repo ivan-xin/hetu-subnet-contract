@@ -4,7 +4,8 @@
   "description": "This is the hetu subnet contracts, which includes subnet creation, governance, staking, settlement and other functions.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "hardhat test",
+    "test:subnet": "hardhat test test/SubnetManager.test.js"
   },
   "author": "",
   "license": "ISC",
