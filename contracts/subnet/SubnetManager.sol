@@ -96,40 +96,40 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
         );
     }
     
-/**
- * @dev Register new subnet with permit authorization in single transaction
- */
-function registerNetworkWithPermit(
-    string calldata name,
-    string calldata description,
-    string calldata tokenName,
-    string calldata tokenSymbol,
-    uint256 deadline,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
-) external nonReentrant returns (uint16 netuid) {
-    uint256 lockAmount = getNetworkLockCost();
-    
-    // Use permit for authorization
-    IERC20Permit(address(hetuToken)).permit(
-        msg.sender,
-        address(this),
-        lockAmount,
-        deadline,
-        v, r, s
-    );
-    
-    // Execute normal registration flow
-    SubnetTypes.SubnetHyperparams memory defaultParams = DefaultHyperparams.getDefaultHyperparams();
-    return _registerNetworkWithHyperparams(
-        name,
-        description,
-        tokenName,
-        tokenSymbol,
-        defaultParams
-    );
-}
+    /**
+     * @dev Register new subnet with permit authorization in single transaction
+     */
+    function registerNetworkWithPermit(
+        string calldata name,
+        string calldata description,
+        string calldata tokenName,
+        string calldata tokenSymbol,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external nonReentrant returns (uint16 netuid) {
+        uint256 lockAmount = getNetworkLockCost();
+        
+        // Use permit for authorization
+        IERC20Permit(address(hetuToken)).permit(
+            msg.sender,
+            address(this),
+            lockAmount,
+            deadline,
+            v, r, s
+        );
+        
+        // Execute normal registration flow
+        SubnetTypes.SubnetHyperparams memory defaultParams = DefaultHyperparams.getDefaultHyperparams();
+        return _registerNetworkWithHyperparams(
+            name,
+            description,
+            tokenName,
+            tokenSymbol,
+            defaultParams
+        );
+    }
 
     /**
      * @dev Register subnet with partial custom hyperparameters and permit authorization
