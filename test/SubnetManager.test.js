@@ -6,19 +6,19 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("SubnetManager", function () {
-  // 部署合约的 fixture
+  // Contract deployment fixture
   async function deploySubnetManagerFixture() {
     const [owner, creator, otherAccount] = await ethers.getSigners();
 
-    // 部署 WHETU 代币
+    // Deploy WHETU token
     const WHETU = await ethers.getContractFactory("WHETU");
     const whetuToken = await WHETU.deploy();
 
-    // 部署 AMM 工厂
+    // Deploy AMM Factory
     const SubnetAMMFactory = await ethers.getContractFactory("SubnetAMMFactory");
     const ammFactory = await SubnetAMMFactory.deploy(owner.address);
 
-    // 部署子网管理器
+    // Deploy Subnet Manager
     const SubnetManager = await ethers.getContractFactory("SubnetManager");
     const subnetManager = await SubnetManager.deploy(whetuToken.target, ammFactory.target);
 
@@ -32,25 +32,25 @@ describe("SubnetManager", function () {
     };
   }
 
-  describe("主流程测试", function () {
-    it("完整流程：包装HETU → 注册子网 → 验证创建", async function () {
+  describe("Main Process Tests", function () {
+    it("Complete flow: Wrap HETU → Register Subnet → Verify Creation", async function () {
       const { creator, whetuToken, subnetManager } = await loadFixture(deploySubnetManagerFixture);
 
-      // 1. 包装原生HETU为WHETU
+      // 1. Wrap native HETU to WHETU
       const hetuAmount = ethers.parseEther("1000");
       await whetuToken.connect(creator).deposit({ value: hetuAmount });
       
       const whetuBalance = await whetuToken.balanceOf(creator.address);
       expect(whetuBalance).to.equal(hetuAmount);
 
-      // 2. 获取锁定成本并授权
+      // 2. Get lock cost and approve
       const lockCost = await subnetManager.getNetworkLockCost();
       await whetuToken.connect(creator).approve(subnetManager.target, lockCost);
 
-      // 3. 跳过速率限制
+      // 3. Skip rate limit
       await time.advanceBlockTo((await ethers.provider.getBlockNumber()) + 1001);
 
-      // 4. 注册子网
+      // 4. Register subnet
       const tx = await subnetManager.connect(creator).registerNetwork(
         "AI Vision Subnet",
         "Computer vision network",
@@ -60,7 +60,7 @@ describe("SubnetManager", function () {
 
       const receipt = await tx.wait();
 
-      // 5. 解析注册事件
+      // 5. Parse registration event
       let networkRegisteredEvent;
       for (const log of receipt.logs) {
         try {
@@ -70,7 +70,7 @@ describe("SubnetManager", function () {
             break;
           }
         } catch (e) {
-          // 忽略解析错误
+          // Ignore parsing errors
         }
       }
 
@@ -80,7 +80,7 @@ describe("SubnetManager", function () {
       const alphaTokenAddress = networkRegisteredEvent.args.alphaToken;
       const ammPoolAddress = networkRegisteredEvent.args.ammPool;
 
-      // 6. 验证子网信息
+      // 6. Verify subnet information
       const subnetInfo = await subnetManager.subnets(netuid);
       expect(subnetInfo.netuid).to.equal(netuid);
       expect(subnetInfo.owner).to.equal(creator.address);
@@ -89,22 +89,22 @@ describe("SubnetManager", function () {
       expect(subnetInfo.ammPool).to.equal(ammPoolAddress);
       expect(subnetInfo.isActive).to.be.true;
 
-      // 7. 验证子网存在
+      // 7. Verify subnet exists
       expect(await subnetManager.subnetExists(netuid)).to.be.true;
 
-      // 8. 验证所有权映射
+      // 8. Verify ownership mapping
       const ownerSubnets = await subnetManager.getUserSubnets(creator.address);
       expect(ownerSubnets).to.include(netuid);
 
-      console.log(`✅ 成功注册子网 ${netuid}`);
-      console.log(`Alpha代币: ${alphaTokenAddress}`);
-      console.log(`AMM池子: ${ammPoolAddress}`);
+      console.log(`✅ Successfully registered subnet ${netuid}`);
+      console.log(`Alpha token: ${alphaTokenAddress}`);
+      console.log(`AMM pool: ${ammPoolAddress}`);
     });
 
-    it("验证AMM池子创建成功", async function () {
+    it("Verify AMM pool creation success", async function () {
     const { creator, otherAccount, whetuToken, subnetManager } = await loadFixture(deploySubnetManagerFixture);
 
-    // 设置子网
+    // Setup subnet
     const hetuAmount = ethers.parseEther("2000");
     await whetuToken.connect(creator).deposit({ value: hetuAmount });
 
@@ -122,7 +122,7 @@ describe("SubnetManager", function () {
 
     const receipt = await tx.wait();
 
-    // 解析事件获取地址
+    // Parse event to get addresses
     let networkRegisteredEvent;
     for (const log of receipt.logs) {
         try {
@@ -137,36 +137,34 @@ describe("SubnetManager", function () {
     const alphaTokenAddress = networkRegisteredEvent.args.alphaToken;
     const ammPoolAddress = networkRegisteredEvent.args.ammPool;
 
-    // 验证合约部署成功
+    // Verify contract deployment success
     expect(alphaTokenAddress).to.not.equal(ethers.ZeroAddress);
     expect(ammPoolAddress).to.not.equal(ethers.ZeroAddress);
 
-    // 验证Alpha代币属性
+    // Verify Alpha token properties
     const AlphaToken = await ethers.getContractFactory("AlphaToken");
     const alphaToken = AlphaToken.attach(alphaTokenAddress);
     
     expect(await alphaToken.name()).to.equal("TradeAlpha");
     expect(await alphaToken.symbol()).to.equal("TRADE");
 
-    // 验证AMM池子有流动性
+    // Verify AMM pool has liquidity
     const SubnetAMM = await ethers.getContractFactory("SubnetAMM");
     const ammPool = SubnetAMM.attach(ammPoolAddress);
     
     const poolInfo = await ammPool.getPoolInfo();
-    expect(poolInfo[1]).to.be.gt(0); // HETU储备 > 0
-    expect(poolInfo[2]).to.be.gt(0); // Alpha储备 > 0
+    expect(poolInfo[1]).to.be.gt(0); // HETU reserve > 0
+    expect(poolInfo[2]).to.be.gt(0); // Alpha reserve > 0
 
-    console.log(`✅ AMM池子创建成功，有初始流动性`);
-    console.log(`HETU储备: ${ethers.formatEther(poolInfo[1])}`);
-    console.log(`Alpha储备: ${ethers.formatEther(poolInfo[2])}`);
+    console.log(`✅ AMM pool created successfully with initial liquidity`);
+    console.log(`HETU reserve: ${ethers.formatEther(poolInfo[1])}`);
+    console.log(`Alpha reserve: ${ethers.formatEther(poolInfo[2])}`);
     });
 
-
-
-    it("错误情况：余额不足和未授权操作", async function () {
+    it("Error cases: Insufficient balance and unauthorized operations", async function () {
       const { creator, otherAccount, whetuToken, subnetManager } = await loadFixture(deploySubnetManagerFixture);
 
-      // 测试余额不足
+      // Test insufficient balance
       const smallAmount = ethers.parseEther("1");
       await whetuToken.connect(creator).deposit({ value: smallAmount });
 
@@ -175,7 +173,7 @@ describe("SubnetManager", function () {
 
       await time.advanceBlockTo((await ethers.provider.getBlockNumber()) + 1001);
 
-      // 修正：使用更通用的错误检查
+      // Fix: Use more generic error checking
       await expect(
         subnetManager.connect(creator).registerNetwork(
           "Test Subnet",
@@ -183,42 +181,42 @@ describe("SubnetManager", function () {
           "TestToken",
           "TT"
         )
-      ).to.be.reverted; // 简化错误检查
+      ).to.be.reverted; // Simplified error checking
 
-      // 测试未授权操作
+      // Test unauthorized operation
       await expect(
         subnetManager.connect(otherAccount).updateNetworkParams(
           ethers.parseEther("200"),
           2000,
           20000
         )
-      ).to.be.reverted; // 简化错误检查
+      ).to.be.reverted; // Simplified error checking
 
-      console.log(`✅ 错误处理正常`);
+      console.log(`✅ Error handling working properly`);
     });
   });
 
-  describe("基础功能测试", function () {
-    it("WHETU包装和解包", async function () {
+  describe("Basic Function Tests", function () {
+    it("WHETU wrapping and unwrapping", async function () {
       const { creator, whetuToken } = await loadFixture(deploySubnetManagerFixture);
 
       const depositAmount = ethers.parseEther("100");
       
-      // 包装
+      // Wrap
       await whetuToken.connect(creator).deposit({ value: depositAmount });
       expect(await whetuToken.balanceOf(creator.address)).to.equal(depositAmount);
 
-      // 解包
+      // Unwrap
       await whetuToken.connect(creator).withdraw(depositAmount);
       expect(await whetuToken.balanceOf(creator.address)).to.equal(0);
 
-      console.log(`✅ WHETU包装解包正常`);
+      console.log(`✅ WHETU wrapping and unwrapping working properly`);
     });
 
-    it("子网信息更新", async function () {
+    it("Subnet information update", async function () {
       const { creator, whetuToken, subnetManager } = await loadFixture(deploySubnetManagerFixture);
 
-      // 注册子网
+      // Register subnet
       const hetuAmount = ethers.parseEther("1000");
       await whetuToken.connect(creator).deposit({ value: hetuAmount });
 
@@ -249,7 +247,7 @@ describe("SubnetManager", function () {
 
       const netuid = networkRegisteredEvent.args.netuid;
 
-      // 更新子网信息 (这个函数存在)
+      // Update subnet information (this function exists)
       await subnetManager.connect(creator).updateSubnetInfo(
         netuid,
         "Updated Name",
@@ -260,13 +258,13 @@ describe("SubnetManager", function () {
       expect(subnetInfo.name).to.equal("Updated Name");
       expect(subnetInfo.description).to.equal("Updated Description");
 
-      console.log(`✅ 子网信息更新成功`);
+      console.log(`✅ Subnet information updated successfully`);
     });
 
-    it("激活和停用子网", async function () {
+    it("Activate and deactivate subnet", async function () {
       const { creator, whetuToken, subnetManager } = await loadFixture(deploySubnetManagerFixture);
 
-      // 注册子网
+      // Register subnet
       const hetuAmount = ethers.parseEther("1000");
       await whetuToken.connect(creator).deposit({ value: hetuAmount });
 
@@ -297,19 +295,19 @@ describe("SubnetManager", function () {
 
       const netuid = networkRegisteredEvent.args.netuid;
 
-      // 验证初始状态是激活的
+      // Verify initial state is active
       let subnetInfo = await subnetManager.subnets(netuid);
       expect(subnetInfo.isActive).to.be.true;
 
-      // 如果有激活函数，测试激活（可能已经激活）
+      // If there's an activation function, test activation (might already be active)
       try {
         await subnetManager.connect(creator).activateSubnet(netuid);
-        console.log(`✅ 子网激活成功`);
+        console.log(`✅ Subnet activation successful`);
       } catch (error) {
-        console.log(`ℹ️ 子网可能已经激活或没有激活函数`);
+        console.log(`ℹ️ Subnet might already be active or no activation function exists`);
       }
 
-      console.log(`✅ 子网状态管理测试完成`);
+      console.log(`✅ Subnet state management test completed`);
     });
   });
 });
