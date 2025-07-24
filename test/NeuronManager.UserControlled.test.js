@@ -189,7 +189,7 @@ describe("NeuronManager - User Controlled Allocation", function () {
       await setupStaking(fixtures, miner, "1000");
       
       // 2. Try to register with insufficient stake (should fail)
-      const insufficientStake = 50; // 50 wei，低于神经元阈值 100 wei
+      const insufficientStake = 50; // 50 wei, below neuron threshold of 100 wei
       
       await expect(
         neuronManager.connect(miner).registerNeuronWithStakeAllocation(
@@ -215,7 +215,7 @@ describe("NeuronManager - User Controlled Allocation", function () {
       await setupStaking(fixtures, validator, "1000");
       
       // 2. Try to register as validator with insufficient stake
-      const insufficientValidatorStake = 500; // 500 wei，满足神经元阈值但不满足验证者阈值
+      const insufficientValidatorStake = 500; // 500 wei, meets neuron threshold but not validator threshold
       
       await expect(
         neuronManager.connect(validator).registerNeuronWithStakeAllocation(

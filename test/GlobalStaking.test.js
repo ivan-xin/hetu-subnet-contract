@@ -162,31 +162,31 @@ describe("GlobalStaking - Available Stake Logic", function () {
     });
   });
 
-  describe("成本管理功能测试", function () {
-    it("应该正确收取注册成本", async function () {
+  describe("Cost Management Function Tests", function () {
+    it("should correctly charge registration cost", async function () {
       const { owner, user1, whetuToken, globalStaking } = await loadFixture(deployGlobalStakingFixture);
       
-      // 设置授权调用者
+      // Set authorized caller
       await globalStaking.setAuthorizedCaller(owner.address, true);
       
-      // 用户质押
+      // User stakes
       const totalStake = ethers.parseEther("1000");
       await whetuToken.connect(user1).deposit({ value: totalStake });
       await whetuToken.connect(user1).approve(globalStaking.target, totalStake);
       await globalStaking.connect(user1).addGlobalStake(totalStake);
       
-      // 分配到子网
+      // Allocate to subnet
       const allocation = ethers.parseEther("500");
       await globalStaking.connect(user1).allocateToSubnet(1, allocation);
       
-      // 获取初始金库余额
+      // Get initial treasury balance
       const initialTreasuryBalance = await whetuToken.balanceOf(owner.address);
       
-      // 收取注册成本
+      // Charge registration cost
       const registrationCost = ethers.parseEther("100");
       await globalStaking.connect(owner).chargeRegistrationCost(user1.address, 1, registrationCost);
       
-      // 验证成本收取
+      // Verify cost charging
       const stakeInfo = await globalStaking.getStakeInfo(user1.address);
       const allocationInfo = await globalStaking.getSubnetAllocation(user1.address, 1);
       const finalTreasuryBalance = await whetuToken.balanceOf(owner.address);
@@ -195,26 +195,26 @@ describe("GlobalStaking - Available Stake Logic", function () {
       expect(allocationInfo.cost).to.equal(registrationCost);
       expect(finalTreasuryBalance - initialTreasuryBalance).to.equal(registrationCost);
       
-      console.log(`✅ 注册成本已收取: ${ethers.formatEther(registrationCost)} HETU`);
+      console.log(`✅ Registration cost charged: ${ethers.formatEther(registrationCost)} HETU`);
     });
 
-    it("应该在余额不足时拒绝收取成本", async function () {
+    it("should refuse to charge cost when balance is insufficient", async function () {
       const { owner, user1, whetuToken, globalStaking } = await loadFixture(deployGlobalStakingFixture);
       
       await globalStaking.setAuthorizedCaller(owner.address, true);
       
-      // 用户只质押少量HETU
+      // User stakes only a small amount of HETU
       const totalStake = ethers.parseEther("100");
       await whetuToken.connect(user1).deposit({ value: totalStake });
       await whetuToken.connect(user1).approve(globalStaking.target, totalStake);
       await globalStaking.connect(user1).addGlobalStake(totalStake);
       
-      // 分配大部分到子网
+      // Allocate most to subnet
       const allocation = ethers.parseEther("90");
       await globalStaking.connect(user1).allocateToSubnet(1, allocation);
       
-      // 尝试收取超过可用余额的成本
-      const excessiveCost = ethers.parseEther("20"); // 只有10 HETU可用
+      // Try to charge cost exceeding available balance
+      const excessiveCost = ethers.parseEther("20"); // Only 10 HETU available
       
       await expect(
         globalStaking.connect(owner).chargeRegistrationCost(user1.address, 1, excessiveCost)
@@ -222,76 +222,76 @@ describe("GlobalStaking - Available Stake Logic", function () {
     });
   });
 
-  describe("查询功能测试", function () {
-    it("应该正确查询用户质押信息", async function () {
+  describe("Query Function Tests", function () {
+    it("should correctly query user stake information", async function () {
       const { user1, whetuToken, globalStaking } = await loadFixture(deployGlobalStakingFixture);
       
-      // 初始状态检查
+      // Initial state check
       let stakeInfo = await globalStaking.getStakeInfo(user1.address);
       expect(stakeInfo.totalStaked).to.equal(0);
       expect(stakeInfo.totalAllocated).to.equal(0);
       expect(stakeInfo.totalCost).to.equal(0);
       
-      // 用户质押
+      // User stakes
       const totalStake = ethers.parseEther("500");
       await whetuToken.connect(user1).deposit({ value: totalStake });
       await whetuToken.connect(user1).approve(globalStaking.target, totalStake);
       await globalStaking.connect(user1).addGlobalStake(totalStake);
       
-      // 验证质押信息
+      // Verify stake information
       stakeInfo = await globalStaking.getStakeInfo(user1.address);
       expect(stakeInfo.totalStaked).to.equal(totalStake);
       expect(stakeInfo.totalAllocated).to.equal(0);
       expect(stakeInfo.totalCost).to.equal(0);
       
-      console.log(`✅ 用户总质押: ${ethers.formatEther(stakeInfo.totalStaked)} HETU`);
+      console.log(`✅ User total stake: ${ethers.formatEther(stakeInfo.totalStaked)} HETU`);
     });
 
-    it("应该正确查询可分配状态", async function () {
+    it("should correctly query allocatable status", async function () {
       const { user1, whetuToken, globalStaking } = await loadFixture(deployGlobalStakingFixture);
       
-      // 用户质押
+      // User stakes
       const totalStake = ethers.parseEther("1000");
       await whetuToken.connect(user1).deposit({ value: totalStake });
       await whetuToken.connect(user1).approve(globalStaking.target, totalStake);
       await globalStaking.connect(user1).addGlobalStake(totalStake);
       
-      // 测试可分配查询
+      // Test allocation queries
       const testAmount1 = ethers.parseEther("500");
       const testAmount2 = ethers.parseEther("1500");
       
       expect(await globalStaking.canAllocateToSubnet(user1.address, testAmount1)).to.be.true;
       expect(await globalStaking.canAllocateToSubnet(user1.address, testAmount2)).to.be.false;
       
-      // 分配后再次测试
+      // Test again after allocation
       await globalStaking.connect(user1).allocateToSubnet(1, testAmount1);
       
-      // 现在只有500 HETU可用，仍然可以分配500 HETU (因为有500可用)
+      // Now only 500 HETU available, can still allocate 500 HETU (because 500 is available)
       expect(await globalStaking.canAllocateToSubnet(user1.address, testAmount1)).to.be.true;
-      // 但不能分配超过500 HETU
+      // But cannot allocate more than 500 HETU
       expect(await globalStaking.canAllocateToSubnet(user1.address, ethers.parseEther("600"))).to.be.false;
     });
   });
 
-  describe("撤回分配测试", function () {
-    it("应该正确处理撤回分配", async function () {
+  describe("Withdrawal Allocation Tests", function () {
+    it("should correctly handle withdrawal of allocation", async function () {
       const { user1, whetuToken, globalStaking } = await loadFixture(deployGlobalStakingFixture);
       
-      // 设置初始状态
+      // Setup initial state
       const totalStake = ethers.parseEther("1000");
       await whetuToken.connect(user1).deposit({ value: totalStake });
       await whetuToken.connect(user1).approve(globalStaking.target, totalStake);
       await globalStaking.connect(user1).addGlobalStake(totalStake);
       
-      // 分配到子网
+      // Allocate to subnet
       const allocation = ethers.parseEther("600");
       await globalStaking.connect(user1).allocateToSubnet(1, allocation);
       
-      // 撤回部分分配
+      // Withdraw partial allocation
       const deallocateAmount = ethers.parseEther("200");
       await globalStaking.connect(user1).deallocateFromSubnet(1, deallocateAmount);
       
-      // 验证状态
+      // Verify state
       const remainingAllocation = allocation - deallocateAmount;
       const stakeInfo = await globalStaking.getStakeInfo(user1.address);
       const allocationInfo = await globalStaking.getSubnetAllocation(user1.address, 1);
@@ -301,13 +301,13 @@ describe("GlobalStaking - Available Stake Logic", function () {
       expect(allocationInfo.allocated).to.equal(remainingAllocation);
       expect(availableStake).to.equal(totalStake - remainingAllocation);
       
-      console.log(`✅ 撤回分配后可用余额: ${ethers.formatEther(availableStake)} HETU`);
+      console.log(`✅ Available balance after withdrawal: ${ethers.formatEther(availableStake)} HETU`);
     });
 
-    it("应该在撤回超过分配时失败", async function () {
+    it("should fail when withdrawing more than allocated", async function () {
       const { user1, whetuToken, globalStaking } = await loadFixture(deployGlobalStakingFixture);
       
-      // 设置初始状态
+      // Setup initial state
       const totalStake = ethers.parseEther("500");
       await whetuToken.connect(user1).deposit({ value: totalStake });
       await whetuToken.connect(user1).approve(globalStaking.target, totalStake);
@@ -316,7 +316,7 @@ describe("GlobalStaking - Available Stake Logic", function () {
       const allocation = ethers.parseEther("300");
       await globalStaking.connect(user1).allocateToSubnet(1, allocation);
       
-      // 尝试撤回超过分配的数量
+      // Try to withdraw more than allocated
       const excessiveDeallocation = ethers.parseEther("400");
       
       await expect(
