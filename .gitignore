@@ -33,3 +33,4 @@ ignition/deployments/chain-31337
 package-lock.json
 ignition/deployments
 scripts/old
+package-lock.json
