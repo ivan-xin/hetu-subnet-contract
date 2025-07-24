@@ -16,7 +16,7 @@ library SubnetTypes {
         uint16 maxWeightsLimit;        // Maximum weight limit
 
         // Economic parameters
-        uint256 baseBurnCost;          // Base burn cost for neuron registration
+        uint256 baseNeuronCost;          // Base burn cost for neuron registration
         uint64 currentDifficulty;      // Current mining difficulty
         uint16 targetRegsPerInterval;  // Target registration rate
         uint16 maxRegsPerBlock;        // Maximum registrations per block
@@ -101,7 +101,7 @@ library SubnetTypes {
 
     struct NeuronInfo {
         address account;              // Account address
-        uint16 uid;                   // UID
+        // uint16 uid;                   // UID
         uint16 netuid;                // Subnet ID
         bool isActive;                // Whether active
         bool isValidator;             // Whether validator

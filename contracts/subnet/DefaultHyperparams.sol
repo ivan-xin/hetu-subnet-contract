@@ -27,7 +27,7 @@ library DefaultHyperparams {
             maxWeightsLimit: 1000,             // Maximum weight limit
             
             // Economic Parameters
-            baseBurnCost: 1 * 1e18,            // Base burn cost for registering neurons (1 HETU)
+            baseNeuronCost: 1 * 1e18,            // Base burn cost for registering neurons (1 HETU)
             currentDifficulty: 10000000,       // Current mining difficulty
             targetRegsPerInterval: 2,          // Target registration rate (expected registrations per interval)
             maxRegsPerBlock: 1,                // Maximum registrations per block
@@ -63,7 +63,7 @@ library DefaultHyperparams {
         if (params.weightsRateLimit <= params.immunityPeriod) return false;
 
         // Validate economic parameters
-        if (params.baseBurnCost == 0) return false;
+        if (params.baseNeuronCost == 0) return false;
         if (params.currentDifficulty == 0) return false;
         if (params.targetRegsPerInterval == 0 || params.targetRegsPerInterval > 100) return false;
         if (params.maxRegsPerBlock == 0 || params.maxRegsPerBlock > 10) return false;
@@ -85,7 +85,7 @@ library DefaultHyperparams {
         SubnetTypes.SubnetHyperparams memory testParams = getDefaultHyperparams();
         
         // Testnet adjustments
-        testParams.baseBurnCost = 0.1 * 1e18;      // Lower burn cost
+        testParams.baseNeuronCost = 0.1 * 1e18;      // Lower burn cost
         testParams.validatorThreshold = 10;        // Lower validator threshold
         testParams.neuronThreshold = 1;            // Lower neuron threshold
         testParams.immunityPeriod = 100;           // Shorter immunity period
@@ -135,7 +135,7 @@ library DefaultHyperparams {
         if (useCustomFlags[7]) merged.maxAllowedValidators = customParams.maxAllowedValidators;
         if (useCustomFlags[8]) merged.minAllowedWeights = customParams.minAllowedWeights;
         if (useCustomFlags[9]) merged.maxWeightsLimit = customParams.maxWeightsLimit;
-        if (useCustomFlags[10]) merged.baseBurnCost = customParams.baseBurnCost;
+        if (useCustomFlags[10]) merged.baseNeuronCost = customParams.baseNeuronCost;
         if (useCustomFlags[11]) merged.currentDifficulty = customParams.currentDifficulty;
         if (useCustomFlags[12]) merged.targetRegsPerInterval = customParams.targetRegsPerInterval;
         if (useCustomFlags[13]) merged.maxRegsPerBlock = customParams.maxRegsPerBlock;
@@ -168,7 +168,7 @@ library DefaultHyperparams {
             a.maxAllowedValidators == b.maxAllowedValidators &&
             a.minAllowedWeights == b.minAllowedWeights &&
             a.maxWeightsLimit == b.maxWeightsLimit &&
-            a.baseBurnCost == b.baseBurnCost &&
+            a.baseNeuronCost == b.baseNeuronCost &&
             a.currentDifficulty == b.currentDifficulty &&
             a.targetRegsPerInterval == b.targetRegsPerInterval &&
             a.maxRegsPerBlock == b.maxRegsPerBlock &&
