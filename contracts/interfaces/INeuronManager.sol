@@ -8,7 +8,7 @@ interface INeuronManager {
     // ============ Events ============
     
     /**
-     * @dev 授权调用者更新事件
+     * @dev Authorized caller update event
      */
     event AuthorizedCallerUpdated(address indexed caller, bool authorized);
     /**
@@ -63,7 +63,7 @@ interface INeuronManager {
     // ============ Core Functions ============
     
     /**
-     * @dev 注册神经元
+     * @dev Register neuron
      */
     function registerNeuronWithStakeAllocation(
         uint16 netuid,
@@ -76,12 +76,12 @@ interface INeuronManager {
     ) external;
 
     /**
-     * @dev 注销神经元
+     * @dev Deregister neuron
      */
     // function deregisterNeuron(uint16 netuid) external;
 
     /**
-     * @dev 更新神经元服务信息
+     * @dev Update neuron service information
      */
     function updateNeuronService(
         uint16 netuid,
@@ -92,7 +92,7 @@ interface INeuronManager {
     ) external;
 
     /**
-     * @dev 更新质押分配
+     * @dev Update stake allocation
      */
     function updateStakeAllocation(
         uint16 netuid,
@@ -103,17 +103,17 @@ interface INeuronManager {
     // ============ View Functions ============
     
     /**
-     * @dev 检查是否为神经元
+     * @dev Check if it's a neuron
      */
     function isNeuron(uint16 netuid, address account) external view returns (bool);
     
     /**
-     * @dev 检查是否为验证者
+     * @dev Check if it's a validator
      */
     function isValidator(uint16 netuid, address account) external view returns (bool);
     
     /**
-     * @dev 获取神经元信息
+     * @dev Get neuron information
      */
     function getNeuronInfo(uint16 netuid, address account) 
         external 
@@ -121,35 +121,35 @@ interface INeuronManager {
         returns (SubnetTypes.NeuronInfo memory);
     
     /**
-     * @dev 获取子网神经元列表
+     * @dev Get subnet neuron list
      */
     function getNeuronList(uint16 netuid) external view returns (address[] memory);
     
     /**
-     * @dev 获取子网神经元数量
+     * @dev Get subnet neuron count
      */
     function getNeuronCount(uint16 netuid) external view returns (uint256);
 
 
     /**
-     * @dev 获取子网验证者数量（内部使用）
+     * @dev Get subnet validator count (internal use)
      */
     function getSubnetValidatorCount(uint16 netuid) external view returns (uint256);
 
     // ============ Admin Functions ============
     
     /**
-     * @dev 设置 GlobalStaking 合约地址
+     * @dev Set GlobalStaking contract address
      */
     // function setGlobalStaking(address _globalStaking) external;
     
     /**
-     * @dev 设置 SubnetManager 合约地址
+     * @dev Set SubnetManager contract address
      */
     // function setSubnetManager(address _subnetManager) external;
 
     /**
-     * @dev 设置授权调用者
+     * @dev Set authorized caller
      */
     // function setAuthorizedCaller(address caller, bool authorized) external;
 

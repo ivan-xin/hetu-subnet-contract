@@ -17,7 +17,7 @@ import "../interfaces/IGlobalStaking.sol";
  */
 contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
     IERC20 public immutable hetuToken;
-    address public treasury; // 协议金库地址
+    address public treasury; // Protocol treasury address
     
     // Authorized contract addresses (NeuronManager, etc.)
     mapping(address => bool) public authorizedCallers;
@@ -65,7 +65,7 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
         StakeInfo storage stakeInfo = userStakes[msg.sender];
         require(stakeInfo.totalStaked >= amount, "INSUFFICIENT_STAKE");
         
-        // 计算可用余额：总质押 - 已分配 - 已消耗成本
+        // Calculate available balance: total staked - allocated - cost consumed
         uint256 available = stakeInfo.totalStaked - stakeInfo.totalAllocated - stakeInfo.totalCost;
         require(available >= amount, "AMOUNT_NOT_AVAILABLE");
 
@@ -99,13 +99,13 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
     {
         require(amount >= minThreshold, "BELOW_MIN_THRESHOLD");
         
-        // 从 tx.origin 获取真实用户地址
+        // Get real user address from tx.origin
         address user = tx.origin;
         _allocateToSubnetInternal(user, netuid, amount);
     }
 
     /**
-     * @dev 用户从子网撤回分配
+     * @dev User withdraws allocation from subnet
      */
     function deallocateFromSubnet(uint16 netuid, uint256 amount) external {
         require(amount > 0, "ZERO_AMOUNT");
@@ -115,12 +115,12 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
 
         StakeInfo storage stakeInfo = userStakes[msg.sender];
         
-        // 更新子网分配
+        // Update subnet allocation
         uint256 oldAmount = allocation.allocated;
         allocation.allocated -= amount;
         allocation.lastUpdateBlock = block.number;
         
-        // 更新全局分配
+        // Update global allocation
         stakeInfo.totalAllocated -= amount;
         stakeInfo.lastUpdateBlock = block.number;
         
@@ -131,7 +131,7 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
         // ============ Cost Functions ============
 
     /**
-     * @dev 收取注册成本（由 NeuronManager 调用）
+     * @dev Charge registration cost (called by NeuronManager)
      */
     function chargeRegistrationCost(address user, uint16 netuid, uint256 cost) 
         external 
@@ -141,20 +141,20 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
         
         StakeInfo storage stakeInfo = userStakes[user];
         
-        // 检查可用余额是否足够支付成本
+        // Check if available balance is sufficient to pay the cost
         uint256 available = stakeInfo.totalStaked - stakeInfo.totalAllocated - stakeInfo.totalCost;
         require(available >= cost, "INSUFFICIENT_AVAILABLE_STAKE");
 
-        // 更新用户总成本
+        // Update user total cost
         stakeInfo.totalCost += cost;
         stakeInfo.lastUpdateBlock = block.number;
         
-        // 更新子网成本
+        // Update subnet cost
         SubnetAllocation storage allocation = subnetAllocations[user][netuid];
         allocation.cost += cost;
         allocation.lastUpdateBlock = block.number;
         
-        // 将成本转移到协议金库
+        // Transfer cost to protocol treasury
         require(hetuToken.transfer(treasury, cost), "TRANSFER_FAILED");
         
         emit RegistrationCost(user, netuid, cost);
@@ -163,7 +163,7 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
         // ============ View Functions ============
 
     /**
-     * @dev 获取用户可用余额
+     * @dev Get user available balance
      */
     function getAvailableStake(address user) external view returns (uint256) {
         StakeInfo storage stakeInfo = userStakes[user];
@@ -171,21 +171,21 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
     }
 
     /**
-     * @dev 获取用户质押信息
+     * @dev Get user stake information
      */
     function getStakeInfo(address user) external view returns (StakeInfo memory) {
         return userStakes[user];
     }
 
     /**
-     * @dev 获取子网分配信息
+     * @dev Get subnet allocation information
      */
     function getSubnetAllocation(address user, uint16 netuid) external view returns (SubnetAllocation memory) {
         return subnetAllocations[user][netuid];
     }
 
     /**
-     * @dev 检查用户是否可以分配指定数量到子网
+     * @dev Check if user can allocate specified amount to subnet
      */
     function canAllocateToSubnet(address user, uint256 amount) external view returns (bool) {
         StakeInfo storage stakeInfo = userStakes[user];
@@ -194,7 +194,7 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
     }
 
     /**
-     * @dev 检查用户是否可以支付注册成本
+     * @dev Check if user can pay registration cost
      */
     function canPayRegistrationCost(address user, uint256 cost) external view returns (bool) {
         StakeInfo storage stakeInfo = userStakes[user];
@@ -211,19 +211,19 @@ contract GlobalStaking is ReentrancyGuard, Ownable, IGlobalStaking {
         uint256 oldAmount = allocation.allocated;
         
         if (amount > oldAmount) {
-            // 增加分配
+            // Increase allocation
             uint256 additional = amount - oldAmount;
             uint256 available = stakeInfo.totalStaked - stakeInfo.totalAllocated - stakeInfo.totalCost;
             require(available >= additional, "INSUFFICIENT_AVAILABLE_STAKE");
             
             stakeInfo.totalAllocated += additional;
         } else if (amount < oldAmount) {
-            // 减少分配
+            // Decrease allocation
             uint256 reduction = oldAmount - amount;
             stakeInfo.totalAllocated -= reduction;
         }
         
-        // 更新分配信息
+        // Update allocation information
         allocation.allocated = amount;
         allocation.lastUpdateBlock = block.number;
         stakeInfo.lastUpdateBlock = block.number;

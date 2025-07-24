@@ -19,17 +19,17 @@ interface IGlobalStaking {
     }
     
     // Events
-    event GlobalStakeAdded(address indexed user, uint256 amount); // 用户增加全局质押
-    event GlobalStakeRemoved(address indexed user, uint256 amount); // 用户减少全局质押
+    event GlobalStakeAdded(address indexed user, uint256 amount); // User adds global stake
+    event GlobalStakeRemoved(address indexed user, uint256 amount); // User removes global stake
     event SubnetAllocationChanged(
         address indexed user,
         uint16 indexed netuid,
         uint256 oldAmount,
         uint256 newAmount
-    );  // 用户分配到子网的质押变更
-    event DeallocatedFromSubnet(address indexed user, uint16 indexed netuid, uint256 amount); // 用户从子网撤回质押
-    event RegistrationCost(address indexed user, uint16 indexed netuid, uint256 cost); // 用户在子网支付注册成本
-    event AuthorizedCallerUpdated(address indexed caller, bool authorized); // 授权调用者更新事件
+    );  // User stake allocation to subnet changed
+    event DeallocatedFromSubnet(address indexed user, uint16 indexed netuid, uint256 amount); // User withdraws stake from subnet
+    event RegistrationCost(address indexed user, uint16 indexed netuid, uint256 cost); // User pays registration cost in subnet
+    event AuthorizedCallerUpdated(address indexed caller, bool authorized); // Authorized caller update event
 
     // ============ Core Functions ============
     function addGlobalStake(uint256 amount) external;
