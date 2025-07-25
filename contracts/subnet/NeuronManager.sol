@@ -110,14 +110,15 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     ) internal {
         // 1. Basic checks
         require(subnetManager.subnetExists(netuid), "SUBNET_NOT_EXISTS");
+        require(subnetManager.isSubnetActive(netuid), "SUBNET_NOT_ACTIVE");
         require(!_neurons[netuid][msg.sender].isActive, "ALREADY_REGISTERED");
 
-
+    
         // 2. Get subnet info and parameters
-        SubnetTypes.SubnetInfo memory subnetInfo = subnetManager.getSubnetInfo(netuid);
+        // SubnetTypes.SubnetInfo memory subnetInfo = subnetManager.getSubnetInfo(netuid);
         SubnetTypes.SubnetHyperparams memory params = subnetManager.getSubnetParams(netuid);
         
-        require(subnetInfo.isActive, "SUBNET_NOT_ACTIVE");
+        // require(subnetInfo.isActive, "SUBNET_NOT_ACTIVE");
 
         // Pre-check: ensure user has enough available stake
         uint256 availableStake = globalStaking.getAvailableStake(msg.sender);

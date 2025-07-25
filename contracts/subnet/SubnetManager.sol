@@ -271,6 +271,15 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
         );
     }
     
+    /**
+     * @dev Check if subnet active
+     * @param netuid Subnet ID
+     * @return isActive True if subnet is active
+     */
+    function isSubnetActive(uint16 netuid) external view returns (bool) {
+        require(subnetExists[netuid], "SUBNET_NOT_EXISTS");
+        return subnets[netuid].isActive;
+    }
 
     /**
      * @dev Get subnet hyperparameters

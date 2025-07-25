@@ -87,6 +87,13 @@ interface ISubnetManager {
     );
 
     /**
+     * @dev Check if subnet active
+     * @param netuid Subnet ID
+     * @return isActive True if subnet is active
+     */
+    function isSubnetActive(uint16 netuid) external view returns (bool);
+    
+    /**
      * @dev Get subnet basic information
      * @param netuid Subnet ID
      * @return Subnet information struct

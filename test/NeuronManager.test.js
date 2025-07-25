@@ -80,7 +80,12 @@ describe("NeuronManager", function () {
       }
     });
     
-    return event.args.netuid;
+    const netuid = event.args.netuid;
+    
+    // Activate the subnet (required for neuron registration)
+    await subnetManager.connect(creator).activateSubnet(netuid);
+    
+    return netuid;
   }
 
   // Helper function to stake HETU

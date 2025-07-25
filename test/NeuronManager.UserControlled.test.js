@@ -86,7 +86,12 @@ describe("NeuronManager - User Controlled Allocation", function () {
       }
     }
     
-    return networkRegisteredEvent.args.netuid;
+    const netuid = networkRegisteredEvent.args.netuid;
+    
+    // Activate the subnet (required for neuron registration)
+    await subnetManager.connect(creator).activateSubnet(netuid);
+    
+    return netuid;
   }
 
   // Helper function to setup staking
@@ -265,6 +270,9 @@ describe("NeuronManager - User Controlled Allocation", function () {
           }
         } catch (e) {}
       }
+      
+      // Activate the second subnet (required for neuron registration)
+      await subnetManager.connect(creator).activateSubnet(netuid2);
       
       // 2. Setup sufficient staking
       await setupStaking(fixtures, miner, "2000");

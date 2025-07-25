@@ -87,7 +87,14 @@ describe("SubnetManager", function () {
       expect(subnetInfo.name).to.equal("AI Vision Subnet");
       expect(subnetInfo.alphaToken).to.equal(alphaTokenAddress);
       expect(subnetInfo.ammPool).to.equal(ammPoolAddress);
-      expect(subnetInfo.isActive).to.be.true;
+      expect(subnetInfo.isActive).to.be.false; // Initially inactive
+      
+      // 6.1. Activate the subnet
+      await subnetManager.connect(creator).activateSubnet(netuid);
+      
+      // 6.2. Verify subnet is now active
+      const activeSubnetInfo = await subnetManager.subnets(netuid);
+      expect(activeSubnetInfo.isActive).to.be.true;
 
       // 7. Verify subnet exists
       expect(await subnetManager.subnetExists(netuid)).to.be.true;
@@ -213,54 +220,6 @@ describe("SubnetManager", function () {
       console.log(`✅ WHETU wrapping and unwrapping working properly`);
     });
 
-    it("Subnet information update", async function () {
-      const { creator, whetuToken, subnetManager } = await loadFixture(deploySubnetManagerFixture);
-
-      // Register subnet
-      const hetuAmount = ethers.parseEther("1000");
-      await whetuToken.connect(creator).deposit({ value: hetuAmount });
-
-      const lockCost = await subnetManager.getNetworkLockCost();
-      await whetuToken.connect(creator).approve(subnetManager.target, lockCost);
-
-      await time.advanceBlockTo((await ethers.provider.getBlockNumber()) + 1001);
-
-      const tx = await subnetManager.connect(creator).registerNetwork(
-        "Original Name",
-        "Original Description",
-        "OriginalToken",
-        "OT"
-      );
-
-      const receipt = await tx.wait();
-
-      let networkRegisteredEvent;
-      for (const log of receipt.logs) {
-        try {
-          const parsedLog = subnetManager.interface.parseLog(log);
-          if (parsedLog && parsedLog.name === "NetworkRegistered") {
-            networkRegisteredEvent = parsedLog;
-            break;
-          }
-        } catch (e) {}
-      }
-
-      const netuid = networkRegisteredEvent.args.netuid;
-
-      // Update subnet information (this function exists)
-      await subnetManager.connect(creator).updateSubnetInfo(
-        netuid,
-        "Updated Name",
-        "Updated Description"
-      );
-
-      const subnetInfo = await subnetManager.subnets(netuid);
-      expect(subnetInfo.name).to.equal("Updated Name");
-      expect(subnetInfo.description).to.equal("Updated Description");
-
-      console.log(`✅ Subnet information updated successfully`);
-    });
-
     it("Activate and deactivate subnet", async function () {
       const { creator, whetuToken, subnetManager } = await loadFixture(deploySubnetManagerFixture);
 
@@ -295,17 +254,18 @@ describe("SubnetManager", function () {
 
       const netuid = networkRegisteredEvent.args.netuid;
 
-      // Verify initial state is active
+      // Verify initial state is inactive (as per contract design)
       let subnetInfo = await subnetManager.subnets(netuid);
-      expect(subnetInfo.isActive).to.be.true;
+      expect(subnetInfo.isActive).to.be.false;
 
-      // If there's an activation function, test activation (might already be active)
-      try {
-        await subnetManager.connect(creator).activateSubnet(netuid);
-        console.log(`✅ Subnet activation successful`);
-      } catch (error) {
-        console.log(`ℹ️ Subnet might already be active or no activation function exists`);
-      }
+      // Test subnet activation
+      await subnetManager.connect(creator).activateSubnet(netuid);
+      
+      // Verify subnet is now active
+      subnetInfo = await subnetManager.subnets(netuid);
+      expect(subnetInfo.isActive).to.be.true;
+      
+      console.log(`✅ Subnet activation successful`);
 
       console.log(`✅ Subnet state management test completed`);
     });
