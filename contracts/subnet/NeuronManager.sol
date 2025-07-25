@@ -20,19 +20,6 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
     // Core storage
     mapping(uint16 => mapping(address => SubnetTypes.NeuronInfo)) internal _neurons;
     mapping(uint16 => address[]) public neuronList;
-    
-    // mapping(address => bool) public authorizedCallers;
-    
-
-    // modifier onlyAuthorizedCaller() {
-    //     require(authorizedCallers[msg.sender], "UNAUTHORIZED_CALLER");
-    //     _;
-    // }
-
-    // modifier onlyAuthorizedCallerOrSelf() {
-    //     require(authorizedCallers[msg.sender] || msg.sender == address(this), "UNAUTHORIZED_CALLER");
-    //     _;
-    // }
 
     
     constructor(
@@ -190,15 +177,15 @@ contract NeuronManager is ReentrancyGuard, Ownable, INeuronManager {
      * @dev Deregister neuron
      */
     function deregisterNeuron(uint16 netuid) external nonReentrant {
-            require(_neurons[netuid][msg.sender].isActive, "NOT_REGISTERED");
-            // Clear neuron
-            delete _neurons[netuid][msg.sender];
-            
-            // Remove from list
-            _removeFromNeuronList(netuid, msg.sender);
-            
-            // Emit event for native code to monitor
-            emit NeuronDeregistered(netuid, msg.sender, block.number);
+        require(_neurons[netuid][msg.sender].isActive, "NOT_REGISTERED");
+        // Clear neuron
+        delete _neurons[netuid][msg.sender];
+        
+        // Remove from list
+        _removeFromNeuronList(netuid, msg.sender);
+        
+        // Emit event for native code to monitor
+        emit NeuronDeregistered(netuid, msg.sender, block.number);
     }
     
     /**
