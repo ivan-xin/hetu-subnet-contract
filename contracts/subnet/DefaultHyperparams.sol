@@ -38,8 +38,8 @@ library DefaultHyperparams {
             commitRevealEnabled: false,        // Commit-reveal mechanism (initially disabled)
             commitRevealPeriod: 1000,          // Commit-reveal period (in blocks)
             servingRateLimit: 50,              // Service rate limit (in blocks)
-            validatorThreshold: 1000,          // Minimum stake threshold for becoming a validator
-            neuronThreshold: 100               // Minimum stake threshold for becoming a neuron
+            validatorThreshold: 500 * 1e18,          // Minimum stake threshold for becoming a validator
+            neuronThreshold: 200 * 1e18               // Minimum stake threshold for becoming a neuron
         });
     }
     

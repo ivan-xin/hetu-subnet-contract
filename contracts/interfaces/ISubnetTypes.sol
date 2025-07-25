@@ -27,8 +27,8 @@ library SubnetTypes {
         bool commitRevealEnabled;      // Commit-reveal mechanism
         uint64 commitRevealPeriod;     // Commit-reveal period
         uint64 servingRateLimit;       // Service rate limit
-        uint16 validatorThreshold;     // Validator threshold
-        uint16 neuronThreshold;        // Neuron threshold
+        uint256 validatorThreshold;     // Validator threshold
+        uint256 neuronThreshold;        // Neuron threshold
     }
     
     struct SubnetInfo {
