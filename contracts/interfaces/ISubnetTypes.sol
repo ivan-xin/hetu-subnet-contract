@@ -27,8 +27,8 @@ library SubnetTypes {
         bool commitRevealEnabled;      // 提交-揭示机制
         uint64 commitRevealPeriod;     // 提交-揭示周期
         uint64 servingRateLimit;       // 服务频率限制
-        uint16 validatorThreshold;     // 验证者门槛
-        uint16 neuronThreshold;        // 神经元门槛
+        uint256 validatorThreshold;     // 验证者门槛
+        uint256 neuronThreshold;        // 神经元门槛
     }
     
     struct SubnetInfo {
@@ -67,7 +67,7 @@ library SubnetTypes {
     // 核心神经元信息 - 只存储必要数据
     struct NeuronCore {
         address account;              // 统一账户地址（不分hot/cold）
-        uint16 uid;                   // UID
+        // uint16 uid;                   // UID
         bool isActive;                // 是否活跃
         bool isValidator;             // 是否为验证者
         uint64 registrationBlock;     // 注册区块
