@@ -330,7 +330,7 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
         SubnetAMM pool = SubnetAMM(subnetInfo.ammPool);
         (
             ,
-            uint256 _subnetTAO,
+            uint256 _subnetHetu,
             uint256 _subnetAlphaIn,
             ,
             uint256 _currentPrice,
@@ -340,7 +340,7 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
         
         currentPrice = _currentPrice;
         totalVolume = _totalVolume;
-        hetuReserve = _subnetTAO;
+        hetuReserve = _subnetHetu;
         alphaReserve = _subnetAlphaIn;
     }
     

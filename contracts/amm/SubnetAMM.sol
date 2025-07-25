@@ -29,7 +29,7 @@ contract SubnetAMM is ReentrancyGuard {
     MechanismType public immutable mechanism;
     
     // Reserves (corresponding to Subtensor storage structure)
-    uint256 public subnetTAO;        // Corresponds to SubnetTAO - HETU reserve in pool
+    uint256 public subnetHetu;        // Corresponds to subnetHetu - HETU reserve in pool
     uint256 public subnetAlphaIn;    // Corresponds to SubnetAlphaIn - Alpha reserve in pool
     uint256 public subnetAlphaOut;   // Corresponds to SubnetAlphaOut - Alpha in circulation
     
@@ -80,7 +80,7 @@ contract SubnetAMM is ReentrancyGuard {
         uint256 alphaAmount
     );
     event PriceUpdated(uint256 currentPrice, uint256 movingPrice);
-    event ReservesUpdated(uint256 subnetTAO, uint256 subnetAlphaIn, uint256 subnetAlphaOut);
+    event ReservesUpdated(uint256 subnetHetu, uint256 subnetAlphaIn, uint256 subnetAlphaOut);
     
     modifier onlySystem() {
         require(
@@ -132,7 +132,7 @@ contract SubnetAMM is ReentrancyGuard {
         
         if (hetuAmount > 0) {
             hetuToken.transferFrom(msg.sender, address(this), hetuAmount);
-            subnetTAO += hetuAmount;
+            subnetHetu += hetuAmount;
         }
         
         if (alphaAmount > 0) {
@@ -142,7 +142,7 @@ contract SubnetAMM is ReentrancyGuard {
         
         _updatePrice();
         emit LiquidityInjected(msg.sender, hetuAmount, alphaAmount);
-        emit ReservesUpdated(subnetTAO, subnetAlphaIn, subnetAlphaOut);
+        emit ReservesUpdated(subnetHetu, subnetAlphaIn, subnetAlphaOut);
     }
     
     /**
@@ -158,11 +158,11 @@ contract SubnetAMM is ReentrancyGuard {
         require(to != address(0), "AMM: ZERO_ADDRESS");
         
         if (hetuAmount > 0) {
-            require(hetuAmount <= subnetTAO, "AMM: INSUFFICIENT_HETU_RESERVE");
-            require(subnetTAO - hetuAmount >= minimumPoolLiquidity, "AMM: BELOW_MIN_LIQUIDITY");
+            require(hetuAmount <= subnetHetu, "AMM: INSUFFICIENT_HETU_RESERVE");
+            require(subnetHetu - hetuAmount >= minimumPoolLiquidity, "AMM: BELOW_MIN_LIQUIDITY");
             
             hetuToken.transfer(to, hetuAmount);
-            subnetTAO -= hetuAmount;
+            subnetHetu -= hetuAmount;
         }
         
         if (alphaAmount > 0) {
@@ -175,7 +175,7 @@ contract SubnetAMM is ReentrancyGuard {
         
         _updatePrice();
         emit LiquidityWithdrawn(msg.sender, hetuAmount, alphaAmount);
-        emit ReservesUpdated(subnetTAO, subnetAlphaIn, subnetAlphaOut);
+        emit ReservesUpdated(subnetHetu, subnetAlphaIn, subnetAlphaOut);
     }
     
     /**
@@ -200,7 +200,7 @@ contract SubnetAMM is ReentrancyGuard {
         alphaToken.transfer(to, alphaAmountOut);
         
         // Update reserves
-        subnetTAO += hetuAmountIn;
+        subnetHetu += hetuAmountIn;
         subnetAlphaIn -= alphaAmountOut;
         subnetAlphaOut += alphaAmountOut;
         
@@ -211,7 +211,7 @@ contract SubnetAMM is ReentrancyGuard {
         _updatePrice();
         
         emit SwapHETUForAlpha(msg.sender, hetuAmountIn, alphaAmountOut, currentAlphaPrice);
-        emit ReservesUpdated(subnetTAO, subnetAlphaIn, subnetAlphaOut);
+        emit ReservesUpdated(subnetHetu, subnetAlphaIn, subnetAlphaOut);
     }
     
     /**
@@ -238,7 +238,7 @@ contract SubnetAMM is ReentrancyGuard {
         // Update reserves
         subnetAlphaIn += alphaAmountIn;
         subnetAlphaOut -= alphaAmountIn;
-        subnetTAO -= hetuAmountOut;
+        subnetHetu -= hetuAmountOut;
         
         // Update statistics
         uint256 hetuValue = _convertToHETUValue(alphaAmountIn);
@@ -248,7 +248,7 @@ contract SubnetAMM is ReentrancyGuard {
         _updatePrice();
         
         emit SwapAlphaForHETU(msg.sender, alphaAmountIn, hetuAmountOut, currentAlphaPrice);
-        emit ReservesUpdated(subnetTAO, subnetAlphaIn, subnetAlphaOut);
+        emit ReservesUpdated(subnetHetu, subnetAlphaIn, subnetAlphaOut);
     }
     
     /**
@@ -260,14 +260,14 @@ contract SubnetAMM is ReentrancyGuard {
             alphaAmount = hetuAmount;
         } else {
             // Dynamic mechanism: AMM calculation
-            if (subnetTAO == 0 || subnetAlphaIn == 0) {
+            if (subnetHetu == 0 || subnetAlphaIn == 0) {
                 return 0;
             }
             
-            // Constant product formula: k = subnetTAO * subnetAlphaIn
-            uint256 k = subnetTAO * subnetAlphaIn;
-            uint256 newSubnetTAO = subnetTAO + hetuAmount;
-            uint256 newSubnetAlphaIn = k / newSubnetTAO;
+            // Constant product formula: k = subnetHetu * subnetAlphaIn
+            uint256 k = subnetHetu * subnetAlphaIn;
+            uint256 newsubnetHetu = subnetHetu + hetuAmount;
+            uint256 newSubnetAlphaIn = k / newsubnetHetu;
             
             // Check liquidity protection
             if (newSubnetAlphaIn < minimumPoolLiquidity) {
@@ -292,25 +292,25 @@ contract SubnetAMM is ReentrancyGuard {
             hetuAmount = alphaAmount;
         } else {
             // Dynamic mechanism: AMM calculation
-            if (subnetTAO == 0 || subnetAlphaIn == 0) {
+            if (subnetHetu == 0 || subnetAlphaIn == 0) {
                 return 0;
             }
             
-            // Constant product formula: k = subnetTAO * subnetAlphaIn
-            uint256 k = subnetTAO * subnetAlphaIn;
+            // Constant product formula: k = subnetHetu * subnetAlphaIn
+            uint256 k = subnetHetu * subnetAlphaIn;
             uint256 newSubnetAlphaIn = subnetAlphaIn + alphaAmount;
-            uint256 newSubnetTAO = k / newSubnetAlphaIn;
+            uint256 newsubnetHetu = k / newSubnetAlphaIn;
             
             // Check liquidity protection
-            if (newSubnetTAO < minimumPoolLiquidity) {
+            if (newsubnetHetu < minimumPoolLiquidity) {
                 return 0;
             }
             
-            hetuAmount = subnetTAO - newSubnetTAO;
+            hetuAmount = subnetHetu - newsubnetHetu;
         }
         
         // Final check
-        if (hetuAmount > subnetTAO || subnetTAO - hetuAmount < minimumPoolLiquidity) {
+        if (hetuAmount > subnetHetu || subnetHetu - hetuAmount < minimumPoolLiquidity) {
             return 0;
         }
     }
@@ -322,7 +322,7 @@ contract SubnetAMM is ReentrancyGuard {
         if (subnetAlphaIn == 0) {
             return 0;
         }
-        return (subnetTAO * 1e18) / subnetAlphaIn;
+        return (subnetHetu * 1e18) / subnetAlphaIn;
     }
     
     /**
@@ -382,7 +382,7 @@ contract SubnetAMM is ReentrancyGuard {
      */
     function getPoolInfo() external view returns (
         MechanismType _mechanism,
-        uint256 _subnetTAO,
+        uint256 _subnetHetu,
         uint256 _subnetAlphaIn,
         uint256 _subnetAlphaOut,
         uint256 _currentPrice,
@@ -392,7 +392,7 @@ contract SubnetAMM is ReentrancyGuard {
     ) {
         return (
             mechanism,
-            subnetTAO,
+            subnetHetu,
             subnetAlphaIn,
             subnetAlphaOut,
             currentAlphaPrice,
@@ -442,9 +442,9 @@ contract SubnetAMM is ReentrancyGuard {
             if (mechanism == MechanismType.Dynamic && subnetAlphaIn > 0) {
                 // Calculate price impact
                 uint256 oldPrice = getAlphaPrice();
-                uint256 newSubnetTAO = subnetTAO + amountIn;
+                uint256 newsubnetHetu = subnetHetu + amountIn;
                 uint256 newSubnetAlphaIn = subnetAlphaIn - amountOut;
-                newPrice = newSubnetAlphaIn > 0 ? (newSubnetTAO * 1e18) / newSubnetAlphaIn : 0;
+                newPrice = newSubnetAlphaIn > 0 ? (newsubnetHetu * 1e18) / newSubnetAlphaIn : 0;
                 
                 if (oldPrice > 0) {
                     priceImpact = newPrice > oldPrice ? 
@@ -461,9 +461,9 @@ contract SubnetAMM is ReentrancyGuard {
             if (mechanism == MechanismType.Dynamic && subnetAlphaIn > 0) {
                 // Calculate price impact
                 uint256 oldPrice = getAlphaPrice();
-                uint256 newSubnetTAO = subnetTAO - amountOut;
+                uint256 newsubnetHetu = subnetHetu - amountOut;
                 uint256 newSubnetAlphaIn = subnetAlphaIn + amountIn;
-                newPrice = (newSubnetTAO * 1e18) / newSubnetAlphaIn;
+                newPrice = (newsubnetHetu * 1e18) / newSubnetAlphaIn;
                 
                 if (oldPrice > 0) {
                     priceImpact = oldPrice > newPrice ? 
@@ -487,7 +487,7 @@ contract SubnetAMM is ReentrancyGuard {
         uint256 percentageOfPool,
         string memory warning
     ) {
-        uint256 reserveIn = isHETUToAlpha ? subnetTAO : subnetAlphaIn;
+        uint256 reserveIn = isHETUToAlpha ? subnetHetu : subnetAlphaIn;
         
         if (reserveIn == 0) {
             return (true, 0, "No liquidity available");
@@ -515,7 +515,7 @@ contract SubnetAMM is ReentrancyGuard {
      * @dev Get constant product K value
      */
     function getK() external view returns (uint256) {
-        return subnetTAO * subnetAlphaIn;
+        return subnetHetu * subnetAlphaIn;
     }
     
     /**
@@ -526,15 +526,15 @@ contract SubnetAMM is ReentrancyGuard {
         string memory status,
         uint256 liquidityRatio
     ) {
-        if (subnetTAO == 0 || subnetAlphaIn == 0) {
+        if (subnetHetu == 0 || subnetAlphaIn == 0) {
             return (false, "No liquidity", 0);
         }
         
         uint256 minLiquidity = minimumPoolLiquidity;
         
-        if (subnetTAO < minLiquidity || subnetAlphaIn < minLiquidity) {
-            liquidityRatio = subnetTAO < subnetAlphaIn ? 
-                (subnetTAO * 100) / minLiquidity : 
+        if (subnetHetu < minLiquidity || subnetAlphaIn < minLiquidity) {
+            liquidityRatio = subnetHetu < subnetAlphaIn ? 
+                (subnetHetu * 100) / minLiquidity : 
                 (subnetAlphaIn * 100) / minLiquidity;
             return (false, "Low liquidity", liquidityRatio);
         }
@@ -558,7 +558,7 @@ contract SubnetAMM is ReentrancyGuard {
             currentAlphaPrice,
             movingAlphaPrice,
             priceUpdateBlock,
-            subnetTAO + _convertToHETUValue(subnetAlphaIn)
+            subnetHetu + _convertToHETUValue(subnetAlphaIn)
         );
     }
     
@@ -608,7 +608,7 @@ contract SubnetAMM is ReentrancyGuard {
         uint256 actualHETU = hetuToken.balanceOf(address(this));
         uint256 actualAlpha = alphaToken.balanceOf(address(this));
         
-        if (actualHETU != subnetTAO) {
+        if (actualHETU != subnetHetu) {
             return (false, "HETU reserve mismatch");
         }
         
@@ -624,7 +624,7 @@ contract SubnetAMM is ReentrancyGuard {
      */
     function getTheoreticalPrice() external view returns (uint256) {
         if (subnetAlphaIn == 0) return 0;
-        return (subnetTAO * 1e18) / subnetAlphaIn;
+        return (subnetHetu * 1e18) / subnetAlphaIn;
     }
     
     /**
@@ -642,10 +642,10 @@ contract SubnetAMM is ReentrancyGuard {
         uint256 actualOut;
         
         if (isHETUToAlpha) {
-            theoreticalOut = (amountIn * subnetAlphaIn) / subnetTAO;
+            theoreticalOut = (amountIn * subnetAlphaIn) / subnetHetu;
             actualOut = simSwapHETUForAlpha(amountIn);
         } else {
-            theoreticalOut = (amountIn * subnetTAO) / subnetAlphaIn;
+            theoreticalOut = (amountIn * subnetHetu) / subnetAlphaIn;
             actualOut = simSwapAlphaForHETU(amountIn);
         }
         
