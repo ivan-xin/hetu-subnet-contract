@@ -227,7 +227,7 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
             poolInitialTao: poolInitialTao,
             burnedAmount: burnedAmount,
             createdAt: block.timestamp,
-            isActive: true,
+            isActive: false,
             name: name,
             description: description
         });
@@ -269,44 +269,6 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
             block.timestamp,
             block.number
         );
-    }
-    
-
-    /**
-     * @dev Transfer subnet ownership
-     */
-    // function transferSubnetOwnership(uint16 netuid, address newOwner) external {
-    //     require(subnetExists[netuid], "SUBNET_NOT_EXISTS");
-    //     require(subnets[netuid].owner == msg.sender, "NOT_OWNER");
-    //     require(newOwner != address(0), "ZERO_ADDRESS");
-    //     require(newOwner != msg.sender, "SAME_OWNER");
-        
-    //     address oldOwner = subnets[netuid].owner;
-    //     subnets[netuid].owner = newOwner;
-        
-    //     // Update ownership mapping
-    //     _removeFromOwnerSubnets(oldOwner, netuid);
-    //     ownerSubnets[newOwner].push(netuid);
-        
-    //     emit SubnetOwnershipTransferred(netuid, oldOwner, newOwner);
-    // }
-    
-    /**
-     * @dev Update subnet information
-     */
-    function updateSubnetInfo(
-        uint16 netuid,
-        string calldata newName,
-        string calldata newDescription
-    ) external {
-        require(subnetExists[netuid], "SUBNET_NOT_EXISTS");
-        require(subnets[netuid].owner == msg.sender, "NOT_OWNER");
-        require(bytes(newName).length > 0, "EMPTY_NAME");
-        
-        subnets[netuid].name = newName;
-        subnets[netuid].description = newDescription;
-        
-        emit SubnetInfoUpdated(netuid, newName, newDescription);
     }
     
 
