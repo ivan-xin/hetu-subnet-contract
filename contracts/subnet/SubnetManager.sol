@@ -36,7 +36,7 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     uint256 public networkLastLock;
     uint256 public networkLastLockBlock;
     uint256 public networkRateLimit = 1000;
-    uint256 public lockReductionInterval = 10000;
+    uint256 public lockReductionInterval = 14400; // 14400 blocks (approx. 1 day)
     
     
     constructor(address _hetuToken, address _ammFactory)Ownable(msg.sender) {
@@ -185,7 +185,9 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
         SubnetTypes.SubnetHyperparams memory hyperparams
     ) internal returns (uint16 netuid) {
         address owner = msg.sender;
-        
+        uint256 currentBlock = block.number;
+        uint256 lastBlock = networkLastLockBlock;
+
         // Basic validation
         require(bytes(name).length > 0, "EMPTY_NAME");
         require(bytes(tokenName).length > 0, "EMPTY_TOKEN_NAME");
@@ -193,12 +195,12 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
         
         // Rate limit
         require(
-            block.number - networkLastLockBlock >= networkRateLimit,
+            currentBlock > lastBlock + networkRateLimit,
             "RATE_LIMIT_EXCEEDED"
         );
         
         // Calculate and lock cost
-        uint256 lockAmount = getNetworkLockCost();
+        uint256 lockAmount = _getExactLockCost(currentBlock);
         hetuToken.transferFrom(owner, address(this), lockAmount);
         
         // Get netuid
@@ -250,8 +252,30 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
         
         return netuid;
     }
+
+    function _getExactLockCost(uint256 atBlock) internal view returns (uint256) {
+        // Calculates exact lock cost based on specified block
+        uint256 lastLock = networkLastLock;
+        uint256 minLock = networkMinLock;
+        uint256 lastLockBlock = networkLastLockBlock;
+        
+        if (lastLockBlock == 0) {
+            return minLock;
+        }
+        
+        uint256 mult = 2;
+        uint256 lockCost = lastLock * mult;
+        
+        if (atBlock > lastLockBlock && lockReductionInterval > 0) {
+            uint256 blocksPassed = atBlock - lastLockBlock;
+            uint256 reduction = (lastLock * blocksPassed) / lockReductionInterval;
+            lockCost = lockCost > reduction ? lockCost - reduction : minLock;
+        }
+        
+        return lockCost < minLock ? minLock : lockCost;
+    }
     
-        /**
+    /**
      * @dev Activate subnet (subnet owner only)
      */
     function activateSubnet(uint16 netuid) external nonReentrant {
@@ -468,6 +492,38 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
             totalNetworks,
             nextNetuid
         );
+    }
+
+    /**
+     * @dev Batch update network configuration (atomic operation)
+     * @param newMinLock New minimum lock amount
+     * @param newRateLimit New rate limit
+     * @param newInterval New reduction interval
+     */
+    function updateNetworkConfig(
+        uint256 newMinLock,
+        uint256 newRateLimit,
+        uint256 newInterval
+    ) external onlyOwner {
+        // Verify all parameters
+        require(newMinLock > 0 && newMinLock >= 1e18 && newMinLock <= 10000 * 1e18, "INVALID_MIN_LOCK");
+        require(newRateLimit >= 100 && newRateLimit <= 50000, "INVALID_RATE_LIMIT");
+        require(newInterval >= 1000 && newInterval <= 100000, "INVALID_INTERVAL");
+        
+        // Save old values
+        uint256 oldMinLock = networkMinLock;
+        uint256 oldRateLimit = networkRateLimit;
+        uint256 oldInterval = lockReductionInterval;
+
+        // Update all values
+        networkMinLock = newMinLock;
+        networkRateLimit = newRateLimit;
+        lockReductionInterval = newInterval;
+
+        // Emit events
+        emit NetworkConfigUpdated("networkMinLock", oldMinLock, newMinLock, msg.sender);
+        emit NetworkConfigUpdated("networkRateLimit", oldRateLimit, newRateLimit, msg.sender);
+        emit NetworkConfigUpdated("lockReductionInterval", oldInterval, newInterval, msg.sender);
     }
 
     /**

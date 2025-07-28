@@ -33,7 +33,12 @@ interface ISubnetManager {
         uint256 blockNumber
     );
 
-    
+    event NetworkConfigUpdated(
+        string indexed paramName,
+        uint256 oldValue,
+        uint256 newValue,
+        address indexed updater
+    );
     // ============ Core Functions ============
     
     /**
@@ -92,7 +97,7 @@ interface ISubnetManager {
      * @return isActive True if subnet is active
      */
     function isSubnetActive(uint16 netuid) external view returns (bool);
-    
+
     /**
      * @dev Get subnet basic information
      * @param netuid Subnet ID
