@@ -62,17 +62,6 @@ contract AlphaToken is ERC20, Ownable, IAlphaToken {
         emit TokensBurned(from, amount);
     }
     
-    /**
-     * @dev Change minter (only owner)
-     */
-    // function changeMinter(address newMinter) external onlyOwner {
-    //     require(newMinter != address(0), "AlphaToken: ZERO_MINTER");
-        
-    //     address oldMinter = minter;
-    //     minter = newMinter;
-        
-    //     emit MinterChanged(oldMinter, newMinter);
-    // }
     
     /**
      * @dev Get token information
