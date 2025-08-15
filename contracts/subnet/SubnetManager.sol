@@ -375,6 +375,25 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
         alphaToken.mint(address(this), initialAlphaAmount);
         return address(alphaToken);
     }
+
+    function addSubnetMinter(uint16 netuid, address minter) external {
+        require(subnetExists[netuid], "SUBNET_NOT_EXISTS");
+        require(subnets[netuid].owner == msg.sender, "NOT_SUBNET_OWNER");
+        require(minter != address(0), "ZERO_MINTER_ADDRESS");
+        require(minter != address(this), "CANNOT_ADD_SELF");
+        
+        AlphaToken alphaToken = AlphaToken(subnets[netuid].alphaToken);
+        alphaToken.addMinter(minter);
+    }
+
+    function removeSubnetMinter(uint16 netuid, address minter) external {
+        require(subnetExists[netuid], "SUBNET_NOT_EXISTS");
+        require(subnets[netuid].owner == msg.sender, "NOT_SUBNET_OWNER");
+        require(minter != address(0), "ZERO_MINTER_ADDRESS");
+        
+        AlphaToken alphaToken = AlphaToken(subnets[netuid].alphaToken);
+        alphaToken.removeMinter(minter);
+    }
     
     function _createAMMPool(uint16 netuid, address alphaTokenAddress, uint256 poolInitialTao) internal returns (address) {
         address poolAddress = ammFactory.createPool(

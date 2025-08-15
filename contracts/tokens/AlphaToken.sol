@@ -16,13 +16,19 @@ contract AlphaToken is ERC20, Ownable, IAlphaToken {
     uint16 public immutable netuid;
     
     // Minter address (usually SubnetManager)
-    address public minter;
-    
+    address public immutable subnetManager;
+    mapping(address => bool) public authorized_minters;
+
     // Token creation time
     uint256 public immutable createdAt;
     
-    modifier onlyMinter() {
-        require(msg.sender == minter, "AlphaToken: ONLY_MINTER");
+    modifier onlySubnetManager(){
+        require(msg.sender == subnetManager, "AlphaToken: ONLY_SUBNET_MANAGER");
+        _;
+    }
+
+    modifier onlyAuthorizedMinter() {
+        require(authorized_minters[msg.sender], "AlphaToken: NOT_AUTHORIZED_MINTER");
         _;
     }
     
@@ -33,16 +39,40 @@ contract AlphaToken is ERC20, Ownable, IAlphaToken {
         uint16 _netuid
     ) ERC20(name, symbol) Ownable(_minter){
         require(_minter != address(0), "AlphaToken: ZERO_MINTER");
-        
-        minter = _minter;
+
+        subnetManager = _minter;
         netuid = _netuid;
         createdAt = block.timestamp;
+        authorized_minters[subnetManager] = true;
     }
     
     /**
+     * @dev Add minter address (only subnetManager)
+     */
+    function addMinter(address minter) external onlySubnetManager {
+        require(minter != address(0), "AlphaToken: ZERO_ADDRESS");
+        require(!authorized_minters[minter], "AlphaToken: ALREADY_MINTER");
+
+        authorized_minters[minter] = true;
+        emit MinterAdded(minter);
+    }
+
+    /**
+     * @dev Remove minter address (only subnetManager)
+     */
+    function removeMinter(address minter) external onlySubnetManager {
+        require(minter != address(0), "AlphaToken: ZERO_ADDRESS");
+        require(minter != subnetManager, "AlphaToken: CANNOT_REMOVE_SUBNET_MANAGER");
+        require(authorized_minters[minter], "AlphaToken: NOT_AUTHORIZED_MINTER");
+
+        authorized_minters[minter] = false;
+        emit MinterRemoved(minter);
+    }
+
+    /**
      * @dev Mint tokens (only minter)
      */
-    function mint(address to, uint256 amount) external onlyMinter {
+    function mint(address to, uint256 amount) external onlyAuthorizedMinter {
         require(to != address(0), "AlphaToken: ZERO_ADDRESS");
         require(amount > 0, "AlphaToken: ZERO_AMOUNT");
         
@@ -53,7 +83,7 @@ contract AlphaToken is ERC20, Ownable, IAlphaToken {
     /**
      * @dev Burn tokens (only minter)
      */
-    function burn(address from, uint256 amount) external onlyMinter {
+    function burn(address from, uint256 amount) external onlyAuthorizedMinter {
         require(from != address(0), "AlphaToken: ZERO_ADDRESS");
         require(amount > 0, "AlphaToken: ZERO_AMOUNT");
         require(balanceOf(from) >= amount, "AlphaToken: INSUFFICIENT_BALANCE");
@@ -79,7 +109,7 @@ contract AlphaToken is ERC20, Ownable, IAlphaToken {
             symbol(),
             totalSupply(),
             netuid,
-            minter,
+            subnetManager,
             createdAt
         );
     }

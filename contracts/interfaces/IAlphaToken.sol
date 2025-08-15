@@ -13,7 +13,8 @@ interface IAlphaToken is IERC20 {
     event MinterChanged(address indexed oldMinter, address indexed newMinter);
     event TokensMinted(address indexed to, uint256 amount);
     event TokensBurned(address indexed from, uint256 amount);
-    
+    event MinterAdded(address indexed minter);
+    event MinterRemoved(address indexed minter);
     // ============ Core Functions ============
 
     function mint(address to, uint256 amount) external;
@@ -23,7 +24,7 @@ interface IAlphaToken is IERC20 {
     // ============ View Functions ============
     
     function netuid() external view returns (uint16);
-    function minter() external view returns (address);
+    // function minter() external view returns (address);
     function createdAt() external view returns (uint256);
     function getTokenInfo() external view returns (
         string memory _name,
