@@ -12,8 +12,8 @@ module.exports = buildModule("HetuSubnetModule", (m) => {
   // 2. Deploy SubnetManager first (it will create the AMM Factory internally)
   const subnetManager = m.contract("SubnetManager", [hetuToken, systemAddress]);
 
-  // 3. Deploy GlobalStaking
-  const globalStaking = m.contract("GlobalStaking", [hetuToken, systemAddress]);
+  // 3. Deploy GlobalStaking (hetuToken, treasury, initialOwner)
+  const globalStaking = m.contract("GlobalStaking", [hetuToken, systemAddress, deployer]);
 
   // 4. Deploy NeuronManager
   const neuronManager = m.contract("NeuronManager", [

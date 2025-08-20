@@ -1,7 +1,7 @@
 require("@nomicfoundation/hardhat-toolbox");
 
 // 您提供的私钥
-const PRIVATE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+const PRIVATE_KEY = "0xc526ee95bf44d8fc405a158bb884d9d1238d99f0612e9f33d006bb0789009aaa";
 // 您提供的RPC地址
 const CUSTOM_RPC_URL = "https://rpc.testchainv1.hetuscan.com";
 
