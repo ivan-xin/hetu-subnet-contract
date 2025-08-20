@@ -372,7 +372,7 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     
     // Internal functions remain unchanged...
     function _createAlphaToken(uint16 netuid, string calldata name, string calldata symbol) internal returns (address) {
-        AlphaToken alphaToken = new AlphaToken(name, symbol, address(this), netuid);
+        AlphaToken alphaToken = new AlphaToken(name, symbol, address(this), netuid, systemAddress);
         uint256 initialAlphaAmount = networkMinLock;
         alphaToken.mint(address(this), initialAlphaAmount);
         return address(alphaToken);

@@ -17,6 +17,10 @@ contract AlphaToken is ERC20, Ownable, IAlphaToken {
     
     // Minter address (usually SubnetManager)
     address public immutable subnetManager;
+    
+    // System address for protocol-level operations
+    address public immutable systemAddress;
+    
     mapping(address => bool) public authorized_minters;
 
     // Token creation time
@@ -24,6 +28,14 @@ contract AlphaToken is ERC20, Ownable, IAlphaToken {
     
     modifier onlySubnetManager(){
         require(msg.sender == subnetManager, "AlphaToken: ONLY_SUBNET_MANAGER");
+        _;
+    }
+
+    modifier onlySystem() {
+        require(
+            msg.sender == systemAddress || msg.sender == subnetManager, 
+            "AlphaToken: ONLY_SYSTEM"
+        );
         _;
     }
 
@@ -36,11 +48,14 @@ contract AlphaToken is ERC20, Ownable, IAlphaToken {
         string memory name,
         string memory symbol,
         address _minter,
-        uint16 _netuid
+        uint16 _netuid,
+        address _systemAddress
     ) ERC20(name, symbol) Ownable(_minter){
         require(_minter != address(0), "AlphaToken: ZERO_MINTER");
+        require(_systemAddress != address(0), "AlphaToken: ZERO_SYSTEM_ADDRESS");
 
         subnetManager = _minter;
+        systemAddress = _systemAddress;
         netuid = _netuid;
         createdAt = block.timestamp;
         authorized_minters[subnetManager] = true;
@@ -112,5 +127,26 @@ contract AlphaToken is ERC20, Ownable, IAlphaToken {
             subnetManager,
             createdAt
         );
+    }
+
+    /**
+     * @dev Get system address
+     */
+    function getSystemAddress() external view returns (address) {
+        return systemAddress;
+    }
+
+    /**
+     * @dev Check if address has system privileges
+     */
+    function isSystemAddress(address addr) external view returns (bool) {
+        return addr == systemAddress || addr == subnetManager;
+    }
+
+    /**
+     * @dev Check if address is authorized minter
+     */
+    function isAuthorizedMinter(address addr) external view returns (bool) {
+        return authorized_minters[addr];
     }
 }
