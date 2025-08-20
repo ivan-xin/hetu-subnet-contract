@@ -1,4 +1,5 @@
 const { ethers } = require("hardhat");
+const { ignition } = require("hardhat");
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -9,7 +10,7 @@ async function main() {
 
   try {
     // Deploy using Ignition
-    const { hetuToken, ammFactory, globalStaking, subnetManager, neuronManager } = 
+    const { hetuToken, globalStaking, subnetManager, neuronManager } = 
       await ignition.deploy("HetuSubnetModule", {
         parameters: {
           HetuSubnetModule: {
@@ -21,10 +22,13 @@ async function main() {
 
     console.log("\n=== Deployment Complete ===");
     console.log("HETU Token:", hetuToken.address);
-    console.log("AMM Factory:", ammFactory.address);
     console.log("GlobalStaking:", globalStaking.address);
     console.log("SubnetManager:", subnetManager.address);
     console.log("NeuronManager:", neuronManager.address);
+    
+    // Get AMM Factory address from SubnetManager
+    const ammFactoryAddress = await subnetManager.ammFactory();
+    console.log("AMM Factory (auto-created):", ammFactoryAddress);
 
     // Save deployment addresses
     const deploymentInfo = {
@@ -32,7 +36,7 @@ async function main() {
       timestamp: new Date().toISOString(),
       contracts: {
         hetuToken: hetuToken.address,
-        ammFactory: ammFactory.address,
+        ammFactory: ammFactoryAddress,
         globalStaking: globalStaking.address,
         subnetManager: subnetManager.address,
         neuronManager: neuronManager.address

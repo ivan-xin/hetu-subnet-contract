@@ -7,29 +7,25 @@ module.exports = buildModule("HetuSubnetModule", (m) => {
   // 1. Deploy HETU Token (use WHETU as test token)
   const hetuToken = m.contract("WHETU");
 
-  // 2. Deploy AMM Factory
-  const ammFactory = m.contract("SubnetAMMFactory", [deployer]);
+  // 2. Deploy GlobalStaking (hetuToken, treasury, initialOwner)
+  const globalStaking = m.contract("GlobalStaking", [hetuToken, deployer, deployer]);
 
-  // 3. Deploy GlobalStaking
-  const globalStaking = m.contract("GlobalStaking", [hetuToken, deployer]);
+  // 3. Deploy SubnetManager (will automatically create SubnetAMMFactory)
+  const subnetManager = m.contract("SubnetManager", [hetuToken, deployer]);
 
-  // 4. Deploy SubnetManager
-  const subnetManager = m.contract("SubnetManager", [hetuToken, ammFactory]);
-
-  // 5. Deploy NeuronManager
+  // 4. Deploy NeuronManager
   const neuronManager = m.contract("NeuronManager", [
     subnetManager,
     globalStaking,
     deployer
   ]);
 
-  // 6. Set Permissions
+  // 5. Set Permissions
   m.call(globalStaking, "setAuthorizedCaller", [neuronManager, true]);
   m.call(neuronManager, "setRewardDistributor", [deployer]);
 
   return {
     hetuToken,
-    ammFactory,
     globalStaking,
     subnetManager,
     neuronManager

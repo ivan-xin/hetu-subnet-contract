@@ -22,7 +22,8 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
 
     IERC20 public immutable  hetuToken;
     SubnetAMMFactory public immutable ammFactory;
-    
+    address public immutable systemAddress;
+
     mapping(uint16 => SubnetTypes.SubnetInfo) public subnets;
     mapping(uint16 => SubnetTypes.SubnetHyperparams) public subnetHyperparams;
     mapping(uint16 => bool) public subnetExists;
@@ -39,12 +40,13 @@ contract SubnetManager is ReentrancyGuard, Ownable, ISubnetManager {
     uint256 public lockReductionInterval = 14400; // 14400 blocks (approx. 1 day)
     
     
-    constructor(address _hetuToken, address _ammFactory)Ownable(msg.sender) {
+    constructor(address _hetuToken, address _systemAddress)Ownable(msg.sender) {
         require(_hetuToken != address(0), "ZERO_HETU_ADDRESS");
-        require(_ammFactory != address(0), "ZERO_FACTORY_ADDRESS");
+        require(_systemAddress != address(0), "ZERO_SYSTEM_ADDRESS");
+        ammFactory = new SubnetAMMFactory(_systemAddress);
+        systemAddress = _systemAddress;
         
         hetuToken = IERC20(_hetuToken);
-        ammFactory = SubnetAMMFactory(_ammFactory);
         networkLastLockBlock = block.number;
     }
     
